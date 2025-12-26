@@ -2,7 +2,7 @@ namespace NovaWallet.Domain.Enums;
 
 public enum UserStatus
 {
+    Blocked = 0,
     Pending = 1,
-    Active = 2,
-    Blocked = 3
+    Active = 2
 }

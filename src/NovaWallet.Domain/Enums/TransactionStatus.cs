@@ -2,7 +2,7 @@ namespace NovaWallet.Domain.Enums;
 
 public enum TransactionStatus
 {
-    Pending = 1,
-    Success = 2,
-    Failed = 3
+    Pending = 0,
+    Success = 1,
+    Failed = 2
 }

@@ -6,6 +6,7 @@ public class Wallet
     public long UserId { get; set; }
     public string WalletNumber { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+    public string CurrencyCode { get; set; } = "TRY";
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 
