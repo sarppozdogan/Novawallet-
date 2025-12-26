@@ -6,3 +6,5 @@
 *.suo
 *.userosscache
 *.sln.docstates
+.env
+src/NovaWallet.API/appsettings.Development.json

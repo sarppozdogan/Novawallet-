@@ -1,0 +1,18 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: novawallet-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+      MSSQL_MEMORY_LIMIT_MB: "2048"
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    volumes:
+      - novawallet_sql_data:/var/opt/mssql
+    restart: unless-stopped
+
+volumes:
+  novawallet_sql_data:
