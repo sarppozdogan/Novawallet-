@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "NovaWallet",
+    "slug": "novawallet-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0F1F"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
+  }
+}
