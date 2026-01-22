@@ -12,6 +12,14 @@ import { StepIndicator } from "../components/StepIndicator";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { formatApiError } from "../utils/errorMapper";
+import {
+  isValidCurrencyCode,
+  isValidPassword,
+  isValidTaxNumber,
+  isValidTckn,
+  sanitizeNumericInput
+} from "../utils/validation";
 
 const steps = ["Phone", "OTP", "Profile"];
 
@@ -31,20 +39,51 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
   const [currencyCode, setCurrencyCode] = useState("TRY");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
-    if (password.trim().length < 6) {
+    if (!isValidPassword(password)) {
+      return false;
+    }
+    if (!isValidCurrencyCode(currencyCode)) {
       return false;
     }
     if (userType === "individual") {
-      return name.trim().length > 0 && surname.trim().length > 0 && tckn.trim().length > 0;
+      return name.trim().length > 0 && surname.trim().length > 0 && isValidTckn(tckn);
     }
-    return taxNumber.trim().length > 0;
-  }, [password, userType, name, surname, tckn, taxNumber]);
+    return isValidTaxNumber(taxNumber);
+  }, [password, userType, name, surname, tckn, taxNumber, currencyCode]);
 
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
+    setLocalError(null);
+    if (!isValidPassword(password)) {
+      setLoading(false);
+      setLocalError("Password must be at least 6 characters.");
+      return;
+    }
+    if (!isValidCurrencyCode(currencyCode)) {
+      setLoading(false);
+      setLocalError("Currency code must be a 3-letter ISO code.");
+      return;
+    }
+    if (userType === "individual") {
+      if (!name.trim() || !surname.trim()) {
+        setLoading(false);
+        setLocalError("Name and surname are required for individual accounts.");
+        return;
+      }
+      if (!isValidTckn(tckn)) {
+        setLoading(false);
+        setLocalError("TCKN must be a valid 11-digit identifier.");
+        return;
+      }
+    } else if (!isValidTaxNumber(taxNumber)) {
+      setLoading(false);
+      setLocalError("Tax number must be 10 digits.");
+      return;
+    }
     try {
       await completeProfile({
         phone,
@@ -60,11 +99,7 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
 
       navigation.navigate("Login", { phone });
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Unable to complete profile.");
-      }
+      setError(formatApiError(err, "Unable to complete profile."));
     } finally {
       setLoading(false);
     }
@@ -102,14 +137,15 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
             <GlassCard>
               {userType === "individual" ? (
                 <>
-                  <GlassInput label="First name" value={name} onChangeText={setName} placeholder="Your name" />
-                  <GlassInput label="Last name" value={surname} onChangeText={setSurname} placeholder="Your surname" />
+                  <GlassInput label="First name" value={name} onChangeText={setName} placeholder="Your name" maxLength={100} />
+                  <GlassInput label="Last name" value={surname} onChangeText={setSurname} placeholder="Your surname" maxLength={100} />
                   <GlassInput
                     label="TCKN"
                     value={tckn}
-                    onChangeText={setTckn}
+                    onChangeText={(value) => setTckn(sanitizeNumericInput(value, 11))}
                     keyboardType="number-pad"
                     placeholder="11-digit ID"
+                    maxLength={11}
                   />
                 </>
               ) : (
@@ -117,12 +153,13 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
                   <GlassInput
                     label="Tax number"
                     value={taxNumber}
-                    onChangeText={setTaxNumber}
+                    onChangeText={(value) => setTaxNumber(sanitizeNumericInput(value, 10))}
                     keyboardType="number-pad"
                     placeholder="Corporate tax number"
+                    maxLength={10}
                   />
-                  <GlassInput label="Contact name (optional)" value={name} onChangeText={setName} />
-                  <GlassInput label="Contact surname (optional)" value={surname} onChangeText={setSurname} />
+                  <GlassInput label="Contact name (optional)" value={name} onChangeText={setName} maxLength={100} />
+                  <GlassInput label="Contact surname (optional)" value={surname} onChangeText={setSurname} maxLength={100} />
                 </>
               )}
 
@@ -138,16 +175,19 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
                 value={address}
                 onChangeText={setAddress}
                 placeholder="Street, city"
+                maxLength={512}
               />
               <GlassInput
                 label="Currency code"
                 value={currencyCode}
-                onChangeText={(value) => setCurrencyCode(value.toUpperCase())}
+                onChangeText={(value) => setCurrencyCode(value.toUpperCase().replace(/[^A-Z]/g, ""))}
                 placeholder="TRY"
                 autoCapitalize="characters"
+                maxLength={3}
               />
 
               <GlassButton title="Complete profile" onPress={handleSubmit} loading={loading} disabled={!canSubmit} />
+              {localError ? <ErrorBanner message={localError} /> : null}
               {error ? <ErrorBanner message={error} /> : null}
             </GlassCard>
           </ScrollView>

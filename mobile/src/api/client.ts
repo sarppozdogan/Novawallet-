@@ -31,13 +31,15 @@ async function parseJsonSafely(response: Response) {
 }
 
 export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...(options?.headers || {})
+  };
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(options?.headers || {})
-    },
-    ...options
+    ...options,
+    headers
   });
 
   const data = await parseJsonSafely(response);

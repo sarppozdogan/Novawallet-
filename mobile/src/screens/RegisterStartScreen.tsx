@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { registerStart } from "../api/auth";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { InfoBanner } from "../components/InfoBanner";
 import { GlassButton } from "../components/GlassButton";
 import { GlassCard } from "../components/GlassCard";
 import { GlassInput } from "../components/GlassInput";
@@ -12,6 +13,8 @@ import { StepIndicator } from "../components/StepIndicator";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { formatApiError } from "../utils/errorMapper";
+import { isValidPhone, sanitizePhoneInput } from "../utils/validation";
 
 const steps = ["Phone", "OTP", "Profile"];
 
@@ -22,21 +25,20 @@ export function RegisterStartScreen({ navigation, route }: Props) {
   const [phone, setPhone] = useState(initialPhone);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
-  const canContinue = useMemo(() => phone.trim().length > 6, [phone]);
+  const canContinue = useMemo(() => isValidPhone(phone), [phone]);
 
   const handleContinue = async () => {
     setLoading(true);
     setError(null);
+    setInfo(null);
     try {
       await registerStart(phone.trim());
+      setInfo("Verification code sent. Please check your messages.");
       navigation.navigate("OtpVerify", { phone: phone.trim() });
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Unable to start registration.");
-      }
+      setError(formatApiError(err, "Unable to start registration."));
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
               <GlassInput
                 label="Phone"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
                 keyboardType="phone-pad"
                 placeholder="+90 5xx xxx xxxx"
               />
@@ -77,6 +79,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
                 onPress={() => navigation.navigate("Login", { phone })}
               />
               {error ? <ErrorBanner message={error} /> : null}
+              {info ? <InfoBanner message={info} /> : null}
             </GlassCard>
 
             <View style={styles.metaRow}>

@@ -11,6 +11,8 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { formatApiError } from "../utils/errorMapper";
+import { isValidPassword, isValidPhone, sanitizePhoneInput } from "../utils/validation";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login"> & {
   onAuthenticated: (token: string) => void;
@@ -24,7 +26,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
 
-  const canLogin = useMemo(() => phone.trim().length > 6 && password.trim().length >= 6, [phone, password]);
+  const canLogin = useMemo(() => isValidPhone(phone) && isValidPassword(password), [phone, password]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -45,11 +47,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
 
       setError("Login failed.");
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Login failed.");
-      }
+      setError(formatApiError(err, "Login failed."));
     } finally {
       setLoading(false);
     }
@@ -62,11 +60,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
       await registerStart(phone.trim());
       navigation.navigate("OtpVerify", { phone: phone.trim() });
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Unable to continue registration.");
-      }
+      setError(formatApiError(err, "Unable to continue registration."));
     } finally {
       setLoading(false);
     }
@@ -85,7 +79,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
               <GlassInput
                 label="Phone"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
                 keyboardType="phone-pad"
                 placeholder="+90 5xx xxx xxxx"
               />
