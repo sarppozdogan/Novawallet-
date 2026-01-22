@@ -11,6 +11,11 @@ public class VirtualBankMock : IBankGateway
         return Task.FromResult(IsApproved());
     }
 
+    public Task<bool> RequestCardTopUpAsync(string cardToken, decimal amount, string currencyCode, string referenceCode, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(IsApproved());
+    }
+
     public Task<bool> RequestWithdrawAsync(string destinationIban, decimal amount, string currencyCode, string referenceCode, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(IsApproved());

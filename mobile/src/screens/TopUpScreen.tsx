@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getBankAccounts, BankAccountSummary } from "../api/bankAccounts";
+import { getCards, CardSummary } from "../api/cards";
 import { topUp } from "../api/transactions";
 import { getWallets, WalletSummary } from "../api/wallets";
 import { ErrorBanner } from "../components/ErrorBanner";
@@ -23,8 +24,11 @@ export function TopUpScreen({ navigation, route }: Props) {
   const initialWalletId = route.params?.walletId;
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccountSummary[]>([]);
+  const [cards, setCards] = useState<CardSummary[]>([]);
   const [selectedWalletId, setSelectedWalletId] = useState<number | null>(initialWalletId ?? null);
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<number | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
+  const [paymentSource, setPaymentSource] = useState<"bank" | "card">("bank");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
@@ -37,12 +41,17 @@ export function TopUpScreen({ navigation, route }: Props) {
       setLoading(true);
       setError(null);
       try {
-        const [walletData, bankData] = await Promise.all([getWallets(), getBankAccounts(false)]);
+        const [walletData, bankData, cardData] = await Promise.all([
+          getWallets(),
+          getBankAccounts(false),
+          getCards(false)
+        ]);
         if (!mounted) {
           return;
         }
         setWallets(walletData);
         setBankAccounts(bankData.filter((item) => item.isActive));
+        setCards(cardData.filter((item) => item.isActive));
         if (!selectedWalletId && walletData.length > 0) {
           setSelectedWalletId(walletData[0].id);
         }
@@ -66,11 +75,12 @@ export function TopUpScreen({ navigation, route }: Props) {
   const selectedWallet = wallets.find((wallet) => wallet.id === selectedWalletId) || null;
   const amountValue = Number(amount);
   const canSubmit = useMemo(() => {
-    return !!selectedWallet && !!selectedBankAccountId && amountValue > 0 && !Number.isNaN(amountValue);
-  }, [selectedWallet, selectedBankAccountId, amountValue]);
+    const sourceValid = paymentSource === "bank" ? !!selectedBankAccountId : !!selectedCardId;
+    return !!selectedWallet && sourceValid && amountValue > 0 && !Number.isNaN(amountValue);
+  }, [selectedWallet, selectedBankAccountId, selectedCardId, amountValue, paymentSource]);
 
   const handleSubmit = async () => {
-    if (!selectedWallet || !selectedBankAccountId) {
+    if (!selectedWallet) {
       return;
     }
     setSubmitting(true);
@@ -79,7 +89,8 @@ export function TopUpScreen({ navigation, route }: Props) {
       const result = await topUp({
         walletId: selectedWallet.id,
         amount: amountValue,
-        bankAccountId: selectedBankAccountId,
+        bankAccountId: paymentSource === "bank" ? selectedBankAccountId : null,
+        cardId: paymentSource === "card" ? selectedCardId : null,
         currencyCode: selectedWallet.currencyCode,
         description: description.trim() || null
       });
@@ -94,6 +105,15 @@ export function TopUpScreen({ navigation, route }: Props) {
       setError(formatApiError(err, "Unable to complete top up."));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSourceChange = (source: "bank" | "card") => {
+    setPaymentSource(source);
+    if (source === "bank") {
+      setSelectedCardId(null);
+    } else {
+      setSelectedBankAccountId(null);
     }
   };
 
@@ -134,6 +154,28 @@ export function TopUpScreen({ navigation, route }: Props) {
             </GlassCard>
 
             <GlassCard style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Payment source</Text>
+              <View style={styles.segmentRow}>
+                <Pressable
+                  onPress={() => handleSourceChange("bank")}
+                  style={[styles.segmentItem, paymentSource === "bank" && styles.segmentItemActive]}
+                >
+                  <Text style={[styles.segmentText, paymentSource === "bank" && styles.segmentTextActive]}>
+                    Bank account
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleSourceChange("card")}
+                  style={[styles.segmentItem, paymentSource === "card" && styles.segmentItemActive]}
+                >
+                  <Text style={[styles.segmentText, paymentSource === "card" && styles.segmentTextActive]}>
+                    Card
+                  </Text>
+                </Pressable>
+              </View>
+            </GlassCard>
+
+            <GlassCard style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Amount</Text>
               <GlassInput
                 label={`Amount (${selectedWallet?.currencyCode ?? "TRY"})`}
@@ -151,34 +193,65 @@ export function TopUpScreen({ navigation, route }: Props) {
               />
             </GlassCard>
 
-            <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Bank account</Text>
-              <View style={styles.selectorList}>
-                {bankAccounts.map((account) => {
-                  const active = account.id === selectedBankAccountId;
-                  return (
-                    <Pressable
-                      key={account.id}
-                      onPress={() => setSelectedBankAccountId(account.id)}
-                      style={[styles.selectorItem, active && styles.selectorItemActive]}
-                    >
-                      <Text style={[styles.selectorTitle, active && styles.selectorTitleActive]}>{account.bankName}</Text>
-                      <Text style={styles.selectorMeta}>{account.iban}</Text>
-                      <Text style={styles.selectorMeta}>{account.accountHolderName}</Text>
-                    </Pressable>
-                  );
-                })}
-                {!loading && bankAccounts.length === 0 ? (
-                  <Text style={styles.emptyInline}>No bank accounts found.</Text>
-                ) : null}
-              </View>
-              <GlassButton
-                title="Manage bank accounts"
-                variant="ghost"
-                style={styles.manageButton}
-                onPress={() => navigation.navigate("BankAccounts")}
-              />
-            </GlassCard>
+            {paymentSource === "bank" ? (
+              <GlassCard style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Bank account</Text>
+                <View style={styles.selectorList}>
+                  {bankAccounts.map((account) => {
+                    const active = account.id === selectedBankAccountId;
+                    return (
+                      <Pressable
+                        key={account.id}
+                        onPress={() => setSelectedBankAccountId(account.id)}
+                        style={[styles.selectorItem, active && styles.selectorItemActive]}
+                      >
+                        <Text style={[styles.selectorTitle, active && styles.selectorTitleActive]}>{account.bankName}</Text>
+                        <Text style={styles.selectorMeta}>{account.iban}</Text>
+                        <Text style={styles.selectorMeta}>{account.accountHolderName}</Text>
+                      </Pressable>
+                    );
+                  })}
+                  {!loading && bankAccounts.length === 0 ? (
+                    <Text style={styles.emptyInline}>No bank accounts found.</Text>
+                  ) : null}
+                </View>
+                <GlassButton
+                  title="Manage bank accounts"
+                  variant="ghost"
+                  style={styles.manageButton}
+                  onPress={() => navigation.navigate("BankAccounts")}
+                />
+              </GlassCard>
+            ) : (
+              <GlassCard style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Card</Text>
+                <View style={styles.selectorList}>
+                  {cards.map((card) => {
+                    const active = card.id === selectedCardId;
+                    return (
+                      <Pressable
+                        key={card.id}
+                        onPress={() => setSelectedCardId(card.id)}
+                        style={[styles.selectorItem, active && styles.selectorItemActive]}
+                      >
+                        <Text style={[styles.selectorTitle, active && styles.selectorTitleActive]}>{card.brand}</Text>
+                        <Text style={styles.selectorMeta}>{card.maskedPan}</Text>
+                        <Text style={styles.selectorMeta}>{card.cardHolderName}</Text>
+                      </Pressable>
+                    );
+                  })}
+                  {!loading && cards.length === 0 ? (
+                    <Text style={styles.emptyInline}>No cards found.</Text>
+                  ) : null}
+                </View>
+                <GlassButton
+                  title="Manage cards"
+                  variant="ghost"
+                  style={styles.manageButton}
+                  onPress={() => navigation.navigate("Cards")}
+                />
+              </GlassCard>
+            )}
 
             <GlassButton
               title={submitting ? "Processing" : "Confirm top up"}
@@ -233,6 +306,32 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1.2,
     marginBottom: 10
+  },
+  segmentRow: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)"
+  },
+  segmentItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 12
+  },
+  segmentItemActive: {
+    backgroundColor: "rgba(98, 247, 247, 0.2)"
+  },
+  segmentText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    color: colors.textSecondary
+  },
+  segmentTextActive: {
+    color: colors.textPrimary
   },
   selectorList: {
     gap: 10

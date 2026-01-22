@@ -19,4 +19,7 @@ export type MainStackParamList = {
   BankAccounts: undefined;
   BankAccountDetail: { accountId: number };
   BankAccountCreate: undefined;
+  Cards: undefined;
+  CardDetail: { cardId: number };
+  CardCreate: undefined;
 };

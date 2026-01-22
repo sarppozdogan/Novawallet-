@@ -26,6 +26,31 @@ export function isValidIban(value: string): boolean {
 export function sanitizeWalletNumberInput(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
 }
+
+export function sanitizeCardNumberInput(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 19);
+}
+
+export function isValidCardNumber(value: string): boolean {
+  const digits = sanitizeCardNumberInput(value);
+  if (digits.length < 12 || digits.length > 19) {
+    return false;
+  }
+  let sum = 0;
+  let alternate = false;
+  for (let i = digits.length - 1; i >= 0; i -= 1) {
+    let digit = Number(digits[i]);
+    if (alternate) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+    sum += digit;
+    alternate = !alternate;
+  }
+  return sum % 10 === 0;
+}
 export function sanitizePhoneInput(value: string): string {
   const cleaned = value.replace(/[^\d+]/g, "");
   if (cleaned.startsWith("+")) {

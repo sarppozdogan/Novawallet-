@@ -180,6 +180,59 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.ToTable("OtpCodes");
                 });
 
+            modelBuilder.Entity("NovaWallet.Domain.Entities.PaymentCard", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("CardHolderName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("CardToken")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExpiryMonth")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ExpiryYear")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MaskedPan")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CardToken")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PaymentCards");
+                });
+
             modelBuilder.Entity("NovaWallet.Domain.Entities.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -192,6 +245,9 @@ namespace NovaWallet.Infrastructure.Migrations
                         .HasColumnType("decimal(19,4)");
 
                     b.Property<long?>("BankAccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("CardId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("CurrencyCode")
@@ -234,6 +290,8 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BankAccountId");
+
+                    b.HasIndex("CardId");
 
                     b.HasIndex("ReceiverWalletId");
 
@@ -339,6 +397,10 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("VirtualIban")
+                        .HasMaxLength(34)
+                        .HasColumnType("nvarchar(34)");
+
                     b.Property<string>("WalletNumber")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -349,6 +411,9 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.HasIndex("WalletNumber")
+                        .IsUnique();
+
+                    b.HasIndex("VirtualIban")
                         .IsUnique();
 
                     b.ToTable("Wallets");
@@ -375,6 +440,17 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("NovaWallet.Domain.Entities.PaymentCard", b =>
+                {
+                    b.HasOne("NovaWallet.Domain.Entities.User", "User")
+                        .WithMany("PaymentCards")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("NovaWallet.Domain.Entities.OtpCode", b =>
                 {
                     b.HasOne("NovaWallet.Domain.Entities.User", "User")
@@ -393,6 +469,11 @@ namespace NovaWallet.Infrastructure.Migrations
                         .HasForeignKey("BankAccountId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("NovaWallet.Domain.Entities.PaymentCard", "Card")
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("NovaWallet.Domain.Entities.Wallet", "ReceiverWallet")
                         .WithMany()
                         .HasForeignKey("ReceiverWalletId")
@@ -408,6 +489,8 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.Navigation("SenderWallet");
 
                     b.Navigation("BankAccount");
+
+                    b.Navigation("Card");
                 });
 
             modelBuilder.Entity("NovaWallet.Domain.Entities.Wallet", b =>
@@ -426,6 +509,8 @@ namespace NovaWallet.Infrastructure.Migrations
                     b.Navigation("Wallets");
 
                     b.Navigation("BankAccounts");
+
+                    b.Navigation("PaymentCards");
                 });
 #pragma warning restore 612, 618
         }

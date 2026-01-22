@@ -34,7 +34,8 @@ export type TransactionDetail = {
 export type TopUpRequest = {
   walletId: number;
   amount: number;
-  bankAccountId: number;
+  bankAccountId?: number | null;
+  cardId?: number | null;
   currencyCode: string;
   description?: string | null;
 };

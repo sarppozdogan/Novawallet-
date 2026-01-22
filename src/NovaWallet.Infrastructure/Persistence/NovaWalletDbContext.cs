@@ -14,6 +14,7 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
+    public DbSet<PaymentCard> PaymentCards => Set<PaymentCard>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<LimitDefinition> LimitDefinitions => Set<LimitDefinition>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
@@ -42,6 +43,8 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
         {
             builder.HasIndex(w => w.WalletNumber).IsUnique();
             builder.Property(w => w.WalletNumber).HasMaxLength(32);
+            builder.HasIndex(w => w.VirtualIban).IsUnique();
+            builder.Property(w => w.VirtualIban).HasMaxLength(34);
             builder.Property(w => w.Balance).HasPrecision(19, 4);
             builder.Property(w => w.CurrencyCode).HasMaxLength(3);
 
@@ -92,6 +95,25 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
                 .WithMany()
                 .HasForeignKey(t => t.BankAccountId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(t => t.Card)
+                .WithMany()
+                .HasForeignKey(t => t.CardId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PaymentCard>(builder =>
+        {
+            builder.HasIndex(c => c.CardToken).IsUnique();
+            builder.Property(c => c.CardToken).HasMaxLength(128);
+            builder.Property(c => c.MaskedPan).HasMaxLength(32);
+            builder.Property(c => c.CardHolderName).HasMaxLength(150);
+            builder.Property(c => c.Brand).HasMaxLength(32);
+
+            builder.HasOne(c => c.User)
+                .WithMany(u => u.PaymentCards)
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<LimitDefinition>(builder =>

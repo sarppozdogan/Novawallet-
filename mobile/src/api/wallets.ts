@@ -3,6 +3,7 @@ import { apiRequestWithAuth } from "./client";
 export type WalletSummary = {
   id: number;
   walletNumber: string;
+  virtualIban?: string | null;
   balance: number;
   currencyCode: string;
   isActive: boolean;

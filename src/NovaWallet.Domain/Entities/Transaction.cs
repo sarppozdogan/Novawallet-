@@ -8,6 +8,7 @@ public class Transaction
     public long? SenderWalletId { get; set; }
     public long? ReceiverWalletId { get; set; }
     public long? BankAccountId { get; set; }
+    public long? CardId { get; set; }
     public TransactionType TransactionType { get; set; }
     public decimal Amount { get; set; }
     public decimal FeeAmount { get; set; }
@@ -21,4 +22,5 @@ public class Transaction
     public Wallet? SenderWallet { get; set; }
     public Wallet? ReceiverWallet { get; set; }
     public BankAccount? BankAccount { get; set; }
+    public PaymentCard? Card { get; set; }
 }

@@ -49,9 +49,14 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.ValidationError, "Amount must be greater than zero.", 400);
         }
 
-        if (request.BankAccountId <= 0)
+        if (!request.BankAccountId.HasValue && !request.CardId.HasValue)
         {
-            throw new AppException(ErrorCodes.ValidationError, "Bank account is required.", 400);
+            throw new AppException(ErrorCodes.ValidationError, "Payment source is required.", 400);
+        }
+
+        if (request.BankAccountId.HasValue && request.CardId.HasValue)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Select only one payment source.", 400);
         }
 
         var wallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.Id == request.WalletId, cancellationToken);
@@ -70,7 +75,26 @@ public class TransactionService : ITransactionService
         EnsureCurrencyMatch(wallet.CurrencyCode, request.CurrencyCode);
         await _limitService.ValidateAsync(wallet.UserId, TransactionType.TopUp, request.Amount, wallet.CurrencyCode, cancellationToken);
 
-        var bankAccount = await GetUserBankAccountAsync(wallet.UserId, request.BankAccountId, cancellationToken);
+        BankAccount? bankAccount = null;
+        PaymentCard? card = null;
+        if (request.BankAccountId.HasValue)
+        {
+            if (request.BankAccountId.Value <= 0)
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Bank account is required.", 400);
+            }
+
+            bankAccount = await GetUserBankAccountAsync(wallet.UserId, request.BankAccountId.Value, cancellationToken);
+        }
+        else if (request.CardId.HasValue)
+        {
+            if (request.CardId.Value <= 0)
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Card is required.", 400);
+            }
+
+            card = await GetUserPaymentCardAsync(wallet.UserId, request.CardId.Value, cancellationToken);
+        }
 
         var referenceCode = _referenceCodeGenerator.Generate();
         var feeAmount = CalculateFee(request.Amount, _feeSettings.TopUpFeeRate);
@@ -81,7 +105,8 @@ public class TransactionService : ITransactionService
         {
             SenderWalletId = null,
             ReceiverWalletId = wallet.Id,
-            BankAccountId = bankAccount.Id,
+            BankAccountId = bankAccount?.Id,
+            CardId = card?.Id,
             TransactionType = TransactionType.TopUp,
             Amount = request.Amount,
             FeeAmount = feeAmount,
@@ -96,7 +121,9 @@ public class TransactionService : ITransactionService
         _dbContext.Transactions.Add(transaction);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var isApproved = await _bankGateway.RequestTopUpAsync(bankAccount.Iban, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken);
+        var isApproved = bankAccount is not null
+            ? await _bankGateway.RequestTopUpAsync(bankAccount.Iban, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken)
+            : await _bankGateway.RequestCardTopUpAsync(card!.CardToken, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken);
 
         await using var dbTransaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
@@ -430,6 +457,25 @@ public class TransactionService : ITransactionService
 
         IbanValidator.EnsureValid(bankAccount.Iban);
         return bankAccount;
+    }
+
+    private async Task<PaymentCard> GetUserPaymentCardAsync(long userId, long cardId, CancellationToken cancellationToken)
+    {
+        var card = await _dbContext.PaymentCards.FirstOrDefaultAsync(
+            c => c.Id == cardId && c.UserId == userId,
+            cancellationToken);
+
+        if (card is null)
+        {
+            throw new AppException(ErrorCodes.NotFound, "Card not found.", 404);
+        }
+
+        if (!card.IsActive)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Card is inactive.", 400);
+        }
+
+        return card;
     }
 
     private async Task EnsureUserActiveAsync(long userId, CancellationToken cancellationToken)

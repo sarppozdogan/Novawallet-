@@ -17,6 +17,7 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IWalletNumberGenerator _walletNumberGenerator;
+    private readonly IVirtualIbanGenerator _virtualIbanGenerator;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IAuditLogger _auditLogger;
 
@@ -27,6 +28,7 @@ public class AuthService : IAuthService
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         IWalletNumberGenerator walletNumberGenerator,
+        IVirtualIbanGenerator virtualIbanGenerator,
         IDateTimeProvider dateTimeProvider,
         IAuditLogger auditLogger)
     {
@@ -36,6 +38,7 @@ public class AuthService : IAuthService
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _walletNumberGenerator = walletNumberGenerator;
+        _virtualIbanGenerator = virtualIbanGenerator;
         _dateTimeProvider = dateTimeProvider;
         _auditLogger = auditLogger;
     }
@@ -229,6 +232,7 @@ public class AuthService : IAuthService
         user.PasswordHash = _passwordHasher.HashPassword(request.Password, salt);
 
         var walletNumber = await _walletNumberGenerator.GenerateAsync(cancellationToken);
+        var virtualIban = await _virtualIbanGenerator.GenerateAsync(cancellationToken);
         var currencyCode = string.IsNullOrWhiteSpace(request.CurrencyCode)
             ? "TRY"
             : request.CurrencyCode.ToUpperInvariant();
@@ -237,6 +241,7 @@ public class AuthService : IAuthService
         {
             UserId = user.Id,
             WalletNumber = walletNumber,
+            VirtualIban = virtualIban,
             Balance = 0m,
             CurrencyCode = currencyCode,
             IsActive = true,

@@ -34,10 +34,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IKpsService, KpsMockService>();
         services.AddScoped<IBankGateway, VirtualBankMock>();
         services.AddScoped<IWalletNumberGenerator, WalletNumberGenerator>();
+        services.AddScoped<IVirtualIbanGenerator, VirtualIbanGenerator>();
         services.AddSingleton<IReferenceCodeGenerator, ReferenceCodeGenerator>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IBankAccountService, BankAccountService>();
+        services.AddScoped<IPaymentCardService, PaymentCardService>();
 
         services.AddScoped<NovaWalletDbInitializer>();
 

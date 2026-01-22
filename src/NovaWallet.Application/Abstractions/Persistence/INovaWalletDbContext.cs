@@ -10,6 +10,7 @@ public interface INovaWalletDbContext
     DbSet<User> Users { get; }
     DbSet<Wallet> Wallets { get; }
     DbSet<BankAccount> BankAccounts { get; }
+    DbSet<PaymentCard> PaymentCards { get; }
     DbSet<Transaction> Transactions { get; }
     DbSet<LimitDefinition> LimitDefinitions { get; }
     DbSet<OtpCode> OtpCodes { get; }

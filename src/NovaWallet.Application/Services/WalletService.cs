@@ -20,7 +20,7 @@ public class WalletService : IWalletService
         var wallets = await _dbContext.Wallets
             .Where(w => w.UserId == userId)
             .OrderBy(w => w.Id)
-            .Select(w => new WalletSummary(w.Id, w.WalletNumber, w.Balance, w.CurrencyCode, w.IsActive))
+            .Select(w => new WalletSummary(w.Id, w.WalletNumber, w.VirtualIban, w.Balance, w.CurrencyCode, w.IsActive))
             .ToListAsync(cancellationToken);
 
         return wallets;
@@ -30,7 +30,7 @@ public class WalletService : IWalletService
     {
         var wallet = await _dbContext.Wallets
             .Where(w => w.Id == walletId)
-            .Select(w => new WalletSummary(w.Id, w.WalletNumber, w.Balance, w.CurrencyCode, w.IsActive))
+            .Select(w => new WalletSummary(w.Id, w.WalletNumber, w.VirtualIban, w.Balance, w.CurrencyCode, w.IsActive))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (wallet is null)

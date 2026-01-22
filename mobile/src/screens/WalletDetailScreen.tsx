@@ -71,6 +71,12 @@ export function WalletDetailScreen({ navigation, route }: Props) {
                   <View style={styles.dot} />
                   <Text style={styles.metaText}>{wallet.isActive ? "Active" : "Inactive"}</Text>
                 </View>
+                {wallet.virtualIban ? (
+                  <View style={styles.ibanRow}>
+                    <Text style={styles.ibanLabel}>Virtual IBAN</Text>
+                    <Text style={styles.ibanValue}>{wallet.virtualIban}</Text>
+                  </View>
+                ) : null}
               </GlassCard>
 
               <View style={styles.actions}>
@@ -171,6 +177,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
     color: colors.textSecondary
+  },
+  ibanRow: {
+    marginTop: 12
+  },
+  ibanLabel: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 11,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2
+  },
+  ibanValue: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.textPrimary,
+    marginTop: 4
   },
   dot: {
     width: 6,

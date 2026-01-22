@@ -14,6 +14,9 @@ import { P2PResultScreen } from "../screens/P2PResultScreen";
 import { BankAccountsScreen } from "../screens/BankAccountsScreen";
 import { BankAccountDetailScreen } from "../screens/BankAccountDetailScreen";
 import { BankAccountCreateScreen } from "../screens/BankAccountCreateScreen";
+import { CardsScreen } from "../screens/CardsScreen";
+import { CardDetailScreen } from "../screens/CardDetailScreen";
+import { CardCreateScreen } from "../screens/CardCreateScreen";
 
 type MainNavigatorProps = {
   onSignOut: () => void;
@@ -39,6 +42,9 @@ export function MainNavigator({ onSignOut }: MainNavigatorProps) {
       <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
       <Stack.Screen name="BankAccountDetail" component={BankAccountDetailScreen} />
       <Stack.Screen name="BankAccountCreate" component={BankAccountCreateScreen} />
+      <Stack.Screen name="Cards" component={CardsScreen} />
+      <Stack.Screen name="CardDetail" component={CardDetailScreen} />
+      <Stack.Screen name="CardCreate" component={CardCreateScreen} />
     </Stack.Navigator>
   );
 }

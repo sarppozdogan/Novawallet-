@@ -2,7 +2,13 @@ using NovaWallet.Domain.Enums;
 
 namespace NovaWallet.Application.Models;
 
-public record TopUpRequest(long WalletId, decimal Amount, long BankAccountId, string CurrencyCode = "TRY", string? Description = null);
+public record TopUpRequest(
+    long WalletId,
+    decimal Amount,
+    long? BankAccountId = null,
+    string CurrencyCode = "TRY",
+    string? Description = null,
+    long? CardId = null);
 
 public record P2PRequest(long SenderWalletId, string ReceiverWalletNumber, decimal Amount, string CurrencyCode = "TRY", string? Description = null);
 

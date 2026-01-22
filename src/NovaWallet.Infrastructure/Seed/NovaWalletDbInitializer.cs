@@ -14,17 +14,20 @@ public class NovaWalletDbInitializer
     private readonly NovaWalletDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IVirtualIbanGenerator _virtualIbanGenerator;
     private readonly SystemWalletSettings _systemWalletSettings;
 
     public NovaWalletDbInitializer(
         NovaWalletDbContext dbContext,
         IPasswordHasher passwordHasher,
         IDateTimeProvider dateTimeProvider,
+        IVirtualIbanGenerator virtualIbanGenerator,
         IOptions<SystemWalletSettings> systemWalletOptions)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _dateTimeProvider = dateTimeProvider;
+        _virtualIbanGenerator = virtualIbanGenerator;
         _systemWalletSettings = systemWalletOptions.Value;
     }
 
@@ -33,6 +36,7 @@ public class NovaWalletDbInitializer
         await _dbContext.Database.MigrateAsync(cancellationToken);
         await SeedSystemWalletAsync(cancellationToken);
         await SeedLimitsAsync(cancellationToken);
+        await SeedWalletIbansAsync(cancellationToken);
     }
 
     private async Task SeedSystemWalletAsync(CancellationToken cancellationToken)
@@ -62,6 +66,7 @@ public class NovaWalletDbInitializer
             {
                 UserId = systemUser.Id,
                 WalletNumber = _systemWalletSettings.SystemRevenueWalletNumber,
+                VirtualIban = await _virtualIbanGenerator.GenerateAsync(cancellationToken),
                 Balance = 0m,
                 CurrencyCode = _systemWalletSettings.CurrencyCode,
                 IsActive = true,
@@ -91,6 +96,25 @@ public class NovaWalletDbInitializer
         };
 
         _dbContext.LimitDefinitions.AddRange(limits);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SeedWalletIbansAsync(CancellationToken cancellationToken)
+    {
+        var wallets = await _dbContext.Wallets
+            .Where(w => w.VirtualIban == null || w.VirtualIban == string.Empty)
+            .ToListAsync(cancellationToken);
+
+        if (wallets.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var wallet in wallets)
+        {
+            wallet.VirtualIban = await _virtualIbanGenerator.GenerateAsync(cancellationToken);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -74,13 +74,19 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
               style={styles.actionButton}
             />
             <GlassButton
+              title="Cards"
+              variant="ghost"
+              onPress={() => navigation.navigate("Cards")}
+              style={styles.actionButton}
+            />
+          </View>
+          <View style={styles.actionsRow}>
+            <GlassButton
               title="Bank accounts"
               variant="ghost"
               onPress={() => navigation.navigate("BankAccounts")}
               style={styles.actionButton}
             />
-          </View>
-          <View style={styles.actionsRow}>
             <GlassButton
               title="Refresh"
               variant="ghost"

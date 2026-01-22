@@ -19,4 +19,5 @@ public class User
 
     public ICollection<Wallet> Wallets { get; set; } = new List<Wallet>();
     public ICollection<BankAccount> BankAccounts { get; set; } = new List<BankAccount>();
+    public ICollection<PaymentCard> PaymentCards { get; set; } = new List<PaymentCard>();
 }
