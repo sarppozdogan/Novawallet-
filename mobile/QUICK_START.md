@@ -33,6 +33,9 @@ npm run ios:simulator
 npx expo start --ios
 ```
 
+Not: iOS Simulator için `localhost` kullanılır. Fiziksel cihaz için `NOVA_API_HOST` veya
+`EXPO_PUBLIC_API_BASE_URL` ile Mac IP'si verin.
+
 ## Sorun Giderme
 
 ### "package.json does not exist" Hatası

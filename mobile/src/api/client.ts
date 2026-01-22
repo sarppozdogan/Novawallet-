@@ -18,13 +18,23 @@ const defaultHost = process.env.EXPO_PUBLIC_API_HOST || (isSimulator ? "localhos
 const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5100";
 const DEFAULT_BASE_URL = `http://${defaultHost}:${fallbackPort}`;
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_BASE_URL;
+const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+const allowRemoteOnSimulator = process.env.EXPO_PUBLIC_ALLOW_REMOTE_ON_SIMULATOR === "true";
+const isLocalhost =
+  typeof envBaseUrl === "string" &&
+  (envBaseUrl.includes("localhost") || envBaseUrl.includes("127.0.0.1"));
+const useEnvBaseUrl = Boolean(envBaseUrl) && (!isSimulator || allowRemoteOnSimulator || isLocalhost);
+
+export const API_BASE_URL = useEnvBaseUrl && envBaseUrl ? envBaseUrl : DEFAULT_BASE_URL;
 
 // Debug: API Base URL'i console'a yazdır (sadece development'ta)
 if (__DEV__) {
   console.log("🔗 API Base URL:", API_BASE_URL);
-  console.log("🔗 Environment Variable:", process.env.EXPO_PUBLIC_API_BASE_URL || "not set");
+  console.log("🔗 Environment Variable:", envBaseUrl || "not set");
   console.log("🔗 Default URL:", DEFAULT_BASE_URL);
+  if (envBaseUrl && !useEnvBaseUrl) {
+    console.log("ℹ️ Simulator'da localhost dışı EXPO_PUBLIC_API_BASE_URL yok sayıldı.");
+  }
 }
 
 type ApiErrorPayload = {

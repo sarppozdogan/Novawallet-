@@ -39,8 +39,8 @@ Script otomatik olarak:
 ### Manuel Çalıştırma
 
 ```bash
-# Mac IP adresini al
-export EXPO_PUBLIC_API_BASE_URL="http://$(ipconfig getifaddr en0):5100"
+# iOS Simulator için localhost
+export EXPO_PUBLIC_API_BASE_URL="http://localhost:5100"
 
 # Expo'yu başlat
 npx expo start --ios
@@ -48,7 +48,8 @@ npx expo start --ios
 
 ## Backend Bağlantısı
 
-iOS Simulator'de backend'e bağlanmak için Mac'in IP adresi kullanılır. Script otomatik olarak bunu yapar.
+iOS Simulator'de backend'e bağlanmak için `localhost` kullanılır. Script otomatik olarak bunu yapar.
+Fiziksel cihaz için `NOVA_API_HOST` veya `EXPO_PUBLIC_API_BASE_URL` ile Mac IP adresini ayarlayın.
 
 Backend'in `http://localhost:5100` adresinde çalıştığından emin olun.
 macOS'ta 5000 portu sistem servisleri tarafından kullanılabildiği için 5100 önerilir.
