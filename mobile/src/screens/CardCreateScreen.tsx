@@ -11,6 +11,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidCardNumber, sanitizeCardNumberInput, sanitizeNumericInput } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
@@ -19,6 +20,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "CardCreate">;
 
 export function CardCreateScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [cardNumber, setCardNumber] = useState("");
   const [cardHolderName, setCardHolderName] = useState("");
   const [expiryMonth, setExpiryMonth] = useState("");
@@ -48,7 +50,7 @@ export function CardCreateScreen({ navigation }: Props) {
       });
       navigation.replace("CardDetail", { cardId: result.id });
     } catch (err) {
-      setError(formatApiError(err, "Unable to add card."));
+      setError(formatApiError(err, t("cards.create.error")));
     } finally {
       setLoading(false);
     }
@@ -61,45 +63,45 @@ export function CardCreateScreen({ navigation }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             <BackButton onPress={() => navigation.goBack()} />
 
-            <Text style={styles.kicker}>Add card</Text>
-            <Text style={styles.title}>Secure card capture</Text>
+            <Text style={styles.kicker}>{t("cards.create.kicker")}</Text>
+            <Text style={styles.title}>{t("cards.create.title")}</Text>
 
             {error ? <ErrorBanner message={error} /> : null}
 
             <GlassCard style={styles.card}>
               <GlassInput
-                label="Card number"
+                label={t("cards.create.card_number_label")}
                 value={cardNumber}
                 onChangeText={(value) => setCardNumber(sanitizeCardNumberInput(value))}
-                placeholder="0000 0000 0000 0000"
+                placeholder={t("cards.create.card_number_placeholder")}
                 keyboardType="number-pad"
                 maxLength={19}
               />
               <GlassInput
-                label="Card holder"
+                label={t("cards.create.card_holder_label")}
                 value={cardHolderName}
                 onChangeText={setCardHolderName}
-                placeholder="Name Surname"
+                placeholder={t("cards.create.card_holder_placeholder")}
                 maxLength={150}
               />
               <GlassInput
-                label="Expiry month (MM)"
+                label={t("cards.create.expiry_month_label")}
                 value={expiryMonth}
                 onChangeText={(value) => setExpiryMonth(sanitizeNumericInput(value, 2))}
                 keyboardType="number-pad"
-                placeholder="MM"
+                placeholder={t("cards.create.expiry_month_placeholder")}
                 maxLength={2}
               />
               <GlassInput
-                label="Expiry year (YYYY)"
+                label={t("cards.create.expiry_year_label")}
                 value={expiryYear}
                 onChangeText={(value) => setExpiryYear(sanitizeNumericInput(value, 4))}
                 keyboardType="number-pad"
-                placeholder="YYYY"
+                placeholder={t("cards.create.expiry_year_placeholder")}
                 maxLength={4}
               />
               <GlassButton
-                title="Add card"
+                title={t("cards.create.add_button")}
                 onPress={handleSubmit}
                 loading={loading}
                 disabled={!canSubmit || loading}

@@ -10,6 +10,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatDate } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
@@ -18,6 +19,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "CardDetail">;
 
 export function CardDetailScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { cardId } = route.params;
   const [card, setCard] = useState<CardDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export function CardDetailScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load card."));
+          setError(formatApiError(err, t("cards.detail.error_load")));
         }
       } finally {
         if (mounted) {
@@ -61,7 +63,7 @@ export function CardDetailScreen({ navigation, route }: Props) {
       await deactivateCard(card.id);
       setCard({ ...card, isActive: false });
     } catch (err) {
-      setError(formatApiError(err, "Unable to deactivate card."));
+      setError(formatApiError(err, t("cards.detail.error_deactivate")));
     } finally {
       setSubmitting(false);
     }
@@ -73,35 +75,35 @@ export function CardDetailScreen({ navigation, route }: Props) {
         <ScrollView contentContainerStyle={styles.container}>
           <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-          <Text style={styles.kicker}>Card</Text>
-          <Text style={styles.title}>Card details</Text>
+          <Text style={styles.kicker}>{t("cards.detail.kicker")}</Text>
+          <Text style={styles.title}>{t("cards.detail.title")}</Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
           {card ? (
             <GlassCard style={styles.card}>
               <View style={styles.row}>
-                <Text style={styles.label}>Brand</Text>
+                <Text style={styles.label}>{t("common.brand")}</Text>
                 <Text style={styles.value}>{card.brand}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Card</Text>
+                <Text style={styles.label}>{t("common.card")}</Text>
                 <Text style={styles.value}>{card.maskedPan}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Holder</Text>
+                <Text style={styles.label}>{t("common.holder")}</Text>
                 <Text style={styles.value}>{card.cardHolderName}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Expiry</Text>
+                <Text style={styles.label}>{t("common.expiry")}</Text>
                 <Text style={styles.value}>{String(card.expiryMonth).padStart(2, "0")}/{card.expiryYear}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Status</Text>
-                <Text style={styles.value}>{card.isActive ? "Active" : "Inactive"}</Text>
+                <Text style={styles.label}>{t("common.status")}</Text>
+                <Text style={styles.value}>{card.isActive ? t("common.active") : t("common.inactive")}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Added</Text>
+                <Text style={styles.label}>{t("common.added")}</Text>
                 <Text style={styles.value}>{formatDate(card.createdAt)}</Text>
               </View>
             </GlassCard>
@@ -109,13 +111,13 @@ export function CardDetailScreen({ navigation, route }: Props) {
 
           {loading && !card ? (
             <GlassCard>
-              <Text style={styles.loadingText}>Loading card...</Text>
+              <Text style={styles.loadingText}>{t("cards.detail.loading")}</Text>
             </GlassCard>
           ) : null}
 
           {card && card.isActive ? (
             <GlassButton
-              title={submitting ? "Deactivating" : "Deactivate card"}
+              title={submitting ? t("cards.detail.deactivating") : t("cards.detail.deactivate")}
               variant="ghost"
               onPress={handleDeactivate}
               loading={submitting}

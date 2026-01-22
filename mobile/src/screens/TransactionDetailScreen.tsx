@@ -10,6 +10,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount, formatDate, getTransactionStatusLabel, getTransactionTypeLabel } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
@@ -18,6 +19,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "TransactionDetail">;
 
 export function TransactionDetailScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { transactionId } = route.params;
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export function TransactionDetailScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load transaction."));
+          setError(formatApiError(err, t("transaction.error_load")));
         }
       } finally {
         if (mounted) {
@@ -56,58 +58,60 @@ export function TransactionDetailScreen({ navigation, route }: Props) {
         <ScrollView contentContainerStyle={styles.container}>
           <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-          <Text style={styles.kicker}>Transaction detail</Text>
-          <Text style={styles.title}>Reference {transaction?.referenceCode ?? ""}</Text>
+          <Text style={styles.kicker}>{t("transaction.detail_kicker")}</Text>
+          <Text style={styles.title}>
+            {t("transaction.reference_title", { reference: transaction?.referenceCode ?? "" })}
+          </Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
           {transaction ? (
             <GlassCard style={styles.card}>
               <View style={styles.row}>
-                <Text style={styles.label}>Type</Text>
+                <Text style={styles.label}>{t("common.type")}</Text>
                 <Text style={styles.value}>{getTransactionTypeLabel(transaction.transactionType)}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Status</Text>
+                <Text style={styles.label}>{t("common.status")}</Text>
                 <Text style={styles.value}>{getTransactionStatusLabel(transaction.status)}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Amount</Text>
+                <Text style={styles.label}>{t("common.amount")}</Text>
                 <Text style={styles.value}>{formatAmount(transaction.amount, transaction.currencyCode)}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Fee</Text>
+                <Text style={styles.label}>{t("common.fee")}</Text>
                 <Text style={styles.value}>{formatAmount(transaction.feeAmount, transaction.currencyCode)}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Net</Text>
+                <Text style={styles.label}>{t("common.net")}</Text>
                 <Text style={styles.value}>{formatAmount(transaction.netTransactionAmount, transaction.currencyCode)}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Date</Text>
+                <Text style={styles.label}>{t("common.date")}</Text>
                 <Text style={styles.value}>{formatDate(transaction.transactionDate)}</Text>
               </View>
               {transaction.senderWalletNumber ? (
                 <View style={styles.row}>
-                  <Text style={styles.label}>Sender</Text>
+                  <Text style={styles.label}>{t("common.sender")}</Text>
                   <Text style={styles.value}>#{transaction.senderWalletNumber}</Text>
                 </View>
               ) : null}
               {transaction.receiverWalletNumber ? (
                 <View style={styles.row}>
-                  <Text style={styles.label}>Receiver</Text>
+                  <Text style={styles.label}>{t("common.receiver")}</Text>
                   <Text style={styles.value}>#{transaction.receiverWalletNumber}</Text>
                 </View>
               ) : null}
               {transaction.bankAccountIban ? (
                 <View style={styles.row}>
-                  <Text style={styles.label}>Bank IBAN</Text>
+                  <Text style={styles.label}>{t("common.bank_iban")}</Text>
                   <Text style={styles.value}>{transaction.bankAccountIban}</Text>
                 </View>
               ) : null}
               {transaction.description ? (
                 <View style={styles.row}>
-                  <Text style={styles.label}>Description</Text>
+                  <Text style={styles.label}>{t("common.description")}</Text>
                   <Text style={styles.value}>{transaction.description}</Text>
                 </View>
               ) : null}
@@ -116,7 +120,7 @@ export function TransactionDetailScreen({ navigation, route }: Props) {
 
           {loading && !transaction ? (
             <GlassCard>
-              <Text style={styles.loadingText}>Loading transaction...</Text>
+              <Text style={styles.loadingText}>{t("transaction.loading")}</Text>
             </GlassCard>
           ) : null}
         </ScrollView>

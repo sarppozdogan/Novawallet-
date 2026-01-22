@@ -1,6 +1,8 @@
+import { getLocaleTag, translate } from "../i18n/i18n";
+
 export function formatAmount(amount: number, currencyCode: string): string {
   try {
-    return new Intl.NumberFormat("tr-TR", {
+    return new Intl.NumberFormat(getLocaleTag(), {
       style: "currency",
       currency: currencyCode
     }).format(amount);
@@ -14,7 +16,7 @@ export function formatDate(value: string): string {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return new Intl.DateTimeFormat("tr-TR", {
+  return new Intl.DateTimeFormat(getLocaleTag(), {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -26,25 +28,25 @@ export function formatDate(value: string): string {
 export function getTransactionTypeLabel(type: number): string {
   switch (type) {
     case 1:
-      return "Top up";
+      return translate("transaction.type.top_up");
     case 2:
-      return "P2P";
+      return translate("transaction.type.p2p");
     case 3:
-      return "Withdraw";
+      return translate("transaction.type.withdraw");
     default:
-      return "Transaction";
+      return translate("transaction.type.default");
   }
 }
 
 export function getTransactionStatusLabel(status: number): string {
   switch (status) {
     case 0:
-      return "Pending";
+      return translate("transaction.status.pending");
     case 1:
-      return "Success";
+      return translate("transaction.status.success");
     case 2:
-      return "Failed";
+      return translate("transaction.status.failed");
     default:
-      return "Unknown";
+      return translate("transaction.status.unknown");
   }
 }

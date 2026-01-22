@@ -13,6 +13,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
 import { sanitizeAmountInput } from "../utils/validation";
@@ -22,6 +23,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "Withdraw">;
 
 export function WithdrawScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const initialWalletId = route.params?.walletId;
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccountSummary[]>([]);
@@ -50,7 +52,7 @@ export function WithdrawScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load withdraw data."));
+          setError(formatApiError(err, t("withdraw.error_load")));
         }
       } finally {
         if (mounted) {
@@ -93,7 +95,7 @@ export function WithdrawScreen({ navigation, route }: Props) {
         walletId: selectedWallet.id
       });
     } catch (err) {
-      setError(formatApiError(err, "Unable to complete withdraw."));
+      setError(formatApiError(err, t("withdraw.error_submit")));
     } finally {
       setSubmitting(false);
     }
@@ -106,13 +108,13 @@ export function WithdrawScreen({ navigation, route }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-            <Text style={styles.kicker}>Withdraw</Text>
-            <Text style={styles.title}>Send funds to your bank</Text>
+            <Text style={styles.kicker}>{t("withdraw.kicker")}</Text>
+            <Text style={styles.title}>{t("withdraw.title")}</Text>
 
             {error ? <ErrorBanner message={error} /> : null}
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Select wallet</Text>
+              <Text style={styles.sectionTitle}>{t("withdraw.section_wallet")}</Text>
               <View style={styles.selectorList}>
                 {wallets.map((wallet) => {
                   const active = wallet.id === selectedWalletId;
@@ -130,31 +132,31 @@ export function WithdrawScreen({ navigation, route }: Props) {
                   );
                 })}
                 {!loading && wallets.length === 0 ? (
-                  <Text style={styles.emptyInline}>No wallets available.</Text>
+                  <Text style={styles.emptyInline}>{t("withdraw.no_wallets")}</Text>
                 ) : null}
               </View>
             </GlassCard>
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Amount</Text>
+              <Text style={styles.sectionTitle}>{t("withdraw.section_amount")}</Text>
               <GlassInput
-                label={`Amount (${selectedWallet?.currencyCode ?? "TRY"})`}
+                label={t("common.amount_with_currency", { currency: selectedWallet?.currencyCode ?? "TRY" })}
                 value={amount}
                 onChangeText={(value) => setAmount(sanitizeAmountInput(value))}
                 keyboardType="decimal-pad"
-                placeholder="0.00"
+                placeholder={t("topup.amount_placeholder")}
               />
               <GlassInput
-                label="Description (optional)"
+                label={t("withdraw.description_label")}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Withdraw" 
+                placeholder={t("withdraw.description_placeholder")}
                 maxLength={140}
               />
             </GlassCard>
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Bank account</Text>
+              <Text style={styles.sectionTitle}>{t("withdraw.section_bank_account")}</Text>
               <View style={styles.selectorList}>
                 {bankAccounts.map((account) => {
                   const active = account.id === selectedBankAccountId;
@@ -171,11 +173,11 @@ export function WithdrawScreen({ navigation, route }: Props) {
                   );
                 })}
                 {!loading && bankAccounts.length === 0 ? (
-                  <Text style={styles.emptyInline}>No bank accounts found.</Text>
+                  <Text style={styles.emptyInline}>{t("withdraw.no_bank_accounts")}</Text>
                 ) : null}
               </View>
               <GlassButton
-                title="Manage bank accounts"
+                title={t("withdraw.manage_bank_accounts")}
                 variant="ghost"
                 style={styles.manageButton}
                 onPress={() => navigation.navigate("BankAccounts")}
@@ -183,7 +185,7 @@ export function WithdrawScreen({ navigation, route }: Props) {
             </GlassCard>
 
             <GlassButton
-              title={submitting ? "Processing" : "Confirm withdraw"}
+              title={submitting ? t("common.processing") : t("withdraw.confirm")}
               onPress={handleSubmit}
               loading={submitting}
               disabled={!canSubmit || submitting}

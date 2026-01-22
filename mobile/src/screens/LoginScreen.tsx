@@ -8,9 +8,11 @@ import { GlassButton } from "../components/GlassButton";
 import { GlassCard } from "../components/GlassCard";
 import { GlassInput } from "../components/GlassInput";
 import { LiquidBackground } from "../components/LiquidBackground";
+import { LanguageSelector } from "../components/LanguageSelector";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidPassword, isValidPhone, sanitizePhoneInput } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
@@ -20,6 +22,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login"> & {
 };
 
 export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
+  const { t } = useI18n();
   const initialPhone = route.params?.phone ?? "";
   const [phone, setPhone] = useState(initialPhone);
   const [password, setPassword] = useState("");
@@ -47,9 +50,9 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
         return;
       }
 
-      setError("Login failed.");
+      setError(t("auth.login_failed"));
     } catch (err) {
-      setError(formatApiError(err, "Login failed."));
+      setError(formatApiError(err, t("auth.login_failed")));
     } finally {
       setLoading(false);
     }
@@ -61,28 +64,31 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.container}>
-            <Text style={styles.kicker}>Welcome back</Text>
-            <Text style={styles.title}>Sign in to NovaWallet</Text>
-            <Text style={styles.subtitle}>Secure access to your liquid portfolio.</Text>
+            <View style={styles.language}>
+              <LanguageSelector />
+            </View>
+            <Text style={styles.kicker}>{t("auth.login.kicker")}</Text>
+            <Text style={styles.title}>{t("auth.login.title")}</Text>
+            <Text style={styles.subtitle}>{t("auth.login.subtitle")}</Text>
 
             <GlassCard style={styles.card}>
               <GlassInput
-                label="Phone"
+                label={t("auth.phone_label")}
                 value={phone}
                 onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
                 keyboardType="phone-pad"
-                placeholder="+90 5xx xxx xxxx"
+                placeholder={t("auth.phone_placeholder")}
               />
               <GlassInput
-                label="Password"
+                label={t("auth.password_label")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                placeholder="Enter your password"
+                placeholder={t("auth.password_placeholder")}
               />
-              <GlassButton title="Sign in" onPress={handleLogin} loading={loading} disabled={!canLogin || loading} />
+              <GlassButton title={t("auth.sign_in")} onPress={handleLogin} loading={loading} disabled={!canLogin || loading} />
               <GlassButton
-                title={needsProfile ? "Completing profile" : "Create account"}
+                title={needsProfile ? t("auth.completing_profile") : t("auth.create_account")}
                 variant="ghost"
                 style={styles.secondaryButton}
                 onPress={() => navigation.navigate("RegisterStart", { phone })}
@@ -92,7 +98,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
             </GlassCard>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Face ID • Encrypted storage • Zero sharing</Text>
+              <Text style={styles.footerText}>{t("auth.footer")}</Text>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -112,7 +118,13 @@ const styles = createScaledStyles({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 24,
-    justifyContent: "center"
+    justifyContent: "center",
+    position: "relative"
+  },
+  language: {
+    position: "absolute",
+    right: 0,
+    top: 0
   },
   kicker: {
     fontFamily: fonts.bodyMedium,

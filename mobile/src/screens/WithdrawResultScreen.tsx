@@ -8,12 +8,14 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { getTransactionStatusLabel } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
 
 type Props = NativeStackScreenProps<MainStackParamList, "WithdrawResult">;
 
 export function WithdrawResultScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { status, referenceCode, walletId, transactionId } = route.params;
   const statusLabel = getTransactionStatusLabel(status);
   const statusColor = status === 1 ? colors.success : status === 2 ? colors.warning : colors.textSecondary;
@@ -23,31 +25,31 @@ export function WithdrawResultScreen({ navigation, route }: Props) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.container}>
           <GlassCard style={styles.card}>
-            <Text style={styles.kicker}>Withdraw result</Text>
+            <Text style={styles.kicker}>{t("withdraw.result_kicker")}</Text>
             <Text style={styles.title}>
-              {status === 1 ? "Withdrawal initiated" : status === 2 ? "Withdraw failed" : "Withdraw pending"}
+              {status === 1 ? t("withdraw.result_success") : status === 2 ? t("withdraw.result_failed") : t("withdraw.result_pending")}
             </Text>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
               <Text style={styles.statusText}>{statusLabel}</Text>
             </View>
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Reference</Text>
+              <Text style={styles.metaLabel}>{t("common.reference")}</Text>
               <Text style={styles.metaValue}>{referenceCode}</Text>
             </View>
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Transaction ID</Text>
+              <Text style={styles.metaLabel}>{t("common.transaction_id")}</Text>
               <Text style={styles.metaValue}>{transactionId}</Text>
             </View>
           </GlassCard>
 
           <GlassButton
-            title="View wallet"
+            title={t("common.view_wallet")}
             onPress={() => navigation.navigate("WalletDetail", { walletId })}
             style={styles.primary}
           />
           <GlassButton
-            title="View transaction"
+            title={t("common.view_transaction")}
             variant="ghost"
             onPress={() => navigation.navigate("TransactionDetail", { transactionId })}
             style={styles.secondary}

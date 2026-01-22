@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { completeProfile } from "../api/auth";
@@ -12,23 +12,17 @@ import { StepIndicator } from "../components/StepIndicator";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { createScaledStyles } from "../theme/scale";
-import {
-  isValidCurrencyCode,
-  isValidPassword,
-  isValidTaxNumber,
-  isValidTckn,
-  sanitizeNumericInput
-} from "../utils/validation";
-
-const steps = ["Phone", "OTP", "Profile"];
+import { isValidCurrencyCode, isValidPassword, isValidTaxNumber, isValidTckn, sanitizeNumericInput } from "../utils/validation";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ProfileComplete">;
 
 type UserType = "individual" | "corporate";
 
 export function ProfileCompleteScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { phone, tckn: initialTckn } = route.params;
   const [userType, setUserType] = useState<UserType>("individual");
   const [name, setName] = useState("");
@@ -61,28 +55,28 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
     setLocalError(null);
     if (!isValidPassword(password)) {
       setLoading(false);
-      setLocalError("Password must be at least 6 characters.");
+      setLocalError(t("auth.error_password_short"));
       return;
     }
     if (!isValidCurrencyCode(currencyCode)) {
       setLoading(false);
-      setLocalError("Currency code must be a 3-letter ISO code.");
+      setLocalError(t("auth.error_currency_code"));
       return;
     }
     if (userType === "individual") {
       if (!name.trim() || !surname.trim()) {
         setLoading(false);
-        setLocalError("Name and surname are required for individual accounts.");
+        setLocalError(t("auth.error_name_surname_required"));
         return;
       }
       if (!isValidTckn(tckn)) {
         setLoading(false);
-        setLocalError("TCKN must be 11 digits.");
+        setLocalError(t("auth.error_tckn"));
         return;
       }
     } else if (!isValidTaxNumber(taxNumber)) {
       setLoading(false);
-      setLocalError("Tax number must be 10 digits.");
+      setLocalError(t("auth.error_tax_number"));
       return;
     }
     try {
@@ -100,37 +94,43 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
 
       navigation.navigate("Login", { phone });
     } catch (err) {
-      setError(formatApiError(err, "Unable to complete profile."));
+      setError(formatApiError(err, t("auth.profile_complete_failed")));
     } finally {
       setLoading(false);
     }
   };
+
+  const steps = [t("auth.step_phone"), t("auth.step_otp"), t("auth.step_profile")];
 
   return (
     <LiquidBackground>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-            <Text style={styles.kicker}>Profile setup</Text>
-            <Text style={styles.title}>Tell us about you</Text>
-            <Text style={styles.subtitle}>This helps us activate your wallet securely.</Text>
+            <Text style={styles.kicker}>{t("auth.profile.kicker")}</Text>
+            <Text style={styles.title}>{t("auth.profile.title")}</Text>
+            <Text style={styles.subtitle}>{t("auth.profile.subtitle")}</Text>
 
             <StepIndicator labels={steps} currentIndex={2} />
 
             <View style={styles.segmented}>
-              <Text style={styles.segmentLabel}>Account type</Text>
+              <Text style={styles.segmentLabel}>{t("auth.account_type_label")}</Text>
               <View style={styles.segmentRow}>
                 <Pressable
                   onPress={() => setUserType("individual")}
                   style={[styles.segmentItem, userType === "individual" && styles.segmentItemActive]}
                 >
-                  <Text style={[styles.segmentText, userType === "individual" && styles.segmentTextActive]}>Individual</Text>
+                  <Text style={[styles.segmentText, userType === "individual" && styles.segmentTextActive]}>
+                    {t("auth.account_individual")}
+                  </Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setUserType("corporate")}
                   style={[styles.segmentItem, userType === "corporate" && styles.segmentItemActive]}
                 >
-                  <Text style={[styles.segmentText, userType === "corporate" && styles.segmentTextActive]}>Corporate</Text>
+                  <Text style={[styles.segmentText, userType === "corporate" && styles.segmentTextActive]}>
+                    {t("auth.account_corporate")}
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -138,48 +138,60 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
             <GlassCard>
               {userType === "individual" ? (
                 <>
-                  <GlassInput label="First name" value={name} onChangeText={setName} placeholder="Your name" maxLength={100} />
-                  <GlassInput label="Last name" value={surname} onChangeText={setSurname} placeholder="Your surname" maxLength={100} />
                   <GlassInput
-                    label="TCKN"
+                    label={t("auth.first_name")}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder={t("auth.name_placeholder")}
+                    maxLength={100}
+                  />
+                  <GlassInput
+                    label={t("auth.last_name")}
+                    value={surname}
+                    onChangeText={setSurname}
+                    placeholder={t("auth.surname_placeholder")}
+                    maxLength={100}
+                  />
+                  <GlassInput
+                    label={t("auth.tckn_short_label")}
                     value={tckn}
                     onChangeText={(value) => setTckn(sanitizeNumericInput(value, 11))}
                     keyboardType="number-pad"
-                    placeholder="11-digit ID"
+                    placeholder={t("auth.tckn_short_placeholder")}
                     maxLength={11}
                   />
                 </>
               ) : (
                 <>
                   <GlassInput
-                    label="Tax number"
+                    label={t("auth.tax_number")}
                     value={taxNumber}
                     onChangeText={(value) => setTaxNumber(sanitizeNumericInput(value, 10))}
                     keyboardType="number-pad"
-                    placeholder="Corporate tax number"
+                    placeholder={t("auth.tax_number_placeholder")}
                     maxLength={10}
                   />
-                  <GlassInput label="Contact name (optional)" value={name} onChangeText={setName} maxLength={100} />
-                  <GlassInput label="Contact surname (optional)" value={surname} onChangeText={setSurname} maxLength={100} />
+                  <GlassInput label={t("auth.contact_name_optional")} value={name} onChangeText={setName} maxLength={100} />
+                  <GlassInput label={t("auth.contact_surname_optional")} value={surname} onChangeText={setSurname} maxLength={100} />
                 </>
               )}
 
               <GlassInput
-                label="Password"
+                label={t("auth.password_label")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                placeholder="Minimum 6 characters"
+                placeholder={t("auth.password_placeholder_short")}
               />
               <GlassInput
-                label="Address (optional)"
+                label={t("auth.address_optional")}
                 value={address}
                 onChangeText={setAddress}
-                placeholder="Street, city"
+                placeholder={t("auth.address_placeholder")}
                 maxLength={512}
               />
               <GlassInput
-                label="Currency code"
+                label={t("auth.currency_code")}
                 value={currencyCode}
                 onChangeText={(value) => setCurrencyCode(value.toUpperCase().replace(/[^A-Z]/g, ""))}
                 placeholder="TRY"
@@ -188,7 +200,7 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
               />
 
               <GlassButton
-                title="Complete profile"
+                title={t("auth.complete_profile")}
                 onPress={handleSubmit}
                 loading={loading}
                 disabled={!canSubmit || loading}

@@ -10,6 +10,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatDate } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
@@ -18,6 +19,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "BankAccountDetail">;
 
 export function BankAccountDetailScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { accountId } = route.params;
   const [account, setAccount] = useState<BankAccountDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export function BankAccountDetailScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load bank account."));
+          setError(formatApiError(err, t("bank_account.detail.error_load")));
         }
       } finally {
         if (mounted) {
@@ -61,7 +63,7 @@ export function BankAccountDetailScreen({ navigation, route }: Props) {
       await deactivateBankAccount(account.id);
       setAccount({ ...account, isActive: false });
     } catch (err) {
-      setError(formatApiError(err, "Unable to deactivate account."));
+      setError(formatApiError(err, t("bank_account.detail.error_deactivate")));
     } finally {
       setSubmitting(false);
     }
@@ -73,31 +75,31 @@ export function BankAccountDetailScreen({ navigation, route }: Props) {
         <ScrollView contentContainerStyle={styles.container}>
           <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-          <Text style={styles.kicker}>Bank account</Text>
-          <Text style={styles.title}>Account details</Text>
+          <Text style={styles.kicker}>{t("bank_account.detail.kicker")}</Text>
+          <Text style={styles.title}>{t("bank_account.detail.title")}</Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
           {account ? (
             <GlassCard style={styles.card}>
               <View style={styles.row}>
-                <Text style={styles.label}>Bank</Text>
+                <Text style={styles.label}>{t("common.bank")}</Text>
                 <Text style={styles.value}>{account.bankName}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>IBAN</Text>
+                <Text style={styles.label}>{t("common.iban")}</Text>
                 <Text style={styles.value}>{account.iban}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Account holder</Text>
+                <Text style={styles.label}>{t("common.account_holder")}</Text>
                 <Text style={styles.value}>{account.accountHolderName}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Status</Text>
-                <Text style={styles.value}>{account.isActive ? "Active" : "Inactive"}</Text>
+                <Text style={styles.label}>{t("common.status")}</Text>
+                <Text style={styles.value}>{account.isActive ? t("common.active") : t("common.inactive")}</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Added</Text>
+                <Text style={styles.label}>{t("common.added")}</Text>
                 <Text style={styles.value}>{formatDate(account.createdAt)}</Text>
               </View>
             </GlassCard>
@@ -105,13 +107,13 @@ export function BankAccountDetailScreen({ navigation, route }: Props) {
 
           {loading && !account ? (
             <GlassCard>
-              <Text style={styles.loadingText}>Loading account...</Text>
+              <Text style={styles.loadingText}>{t("bank_account.detail.loading")}</Text>
             </GlassCard>
           ) : null}
 
           {account && account.isActive ? (
             <GlassButton
-              title={submitting ? "Deactivating" : "Deactivate account"}
+              title={submitting ? t("bank_account.detail.deactivating") : t("bank_account.detail.deactivate")}
               variant="ghost"
               onPress={handleDeactivate}
               loading={submitting}

@@ -11,6 +11,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { createScaledStyles } from "../theme/scale";
 import { BackButton } from "../components/BackButton";
@@ -18,6 +19,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "Cards">;
 
 export function CardsScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [cards, setCards] = useState<CardSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export function CardsScreen({ navigation }: Props) {
       const data = await getCards(true);
       setCards(data);
     } catch (err) {
-      setError(formatApiError(err, "Unable to load cards."));
+      setError(formatApiError(err, t("cards.error_load")));
     } finally {
       setLoading(false);
     }
@@ -47,11 +49,11 @@ export function CardsScreen({ navigation }: Props) {
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.header}>
             <BackButton onPress={() => navigation.goBack()} />
-            <GlassButton title="Add" onPress={() => navigation.navigate("CardCreate")} style={styles.addButton} />
+            <GlassButton title={t("common.add")} onPress={() => navigation.navigate("CardCreate")} style={styles.addButton} />
           </View>
 
-          <Text style={styles.kicker}>Cards</Text>
-          <Text style={styles.title}>Saved payment cards</Text>
+          <Text style={styles.kicker}>{t("cards.kicker")}</Text>
+          <Text style={styles.title}>{t("cards.title")}</Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
@@ -63,10 +65,10 @@ export function CardsScreen({ navigation }: Props) {
                 <Text style={styles.cardMeta}>{card.cardHolderName}</Text>
                 <View style={styles.cardFooter}>
                   <Text style={[styles.status, card.isActive ? styles.statusActive : styles.statusInactive]}>
-                    {card.isActive ? "Active" : "Inactive"}
+                    {card.isActive ? t("common.active") : t("common.inactive")}
                   </Text>
                   <GlassButton
-                    title="Details"
+                    title={t("common.details")}
                     variant="ghost"
                     onPress={() => navigation.navigate("CardDetail", { cardId: card.id })}
                     style={styles.detailButton}
@@ -76,14 +78,14 @@ export function CardsScreen({ navigation }: Props) {
             ))}
             {!loading && cards.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptyTitle}>No cards</Text>
-                <Text style={styles.emptySubtitle}>Add a card to top up instantly.</Text>
-                <GlassButton title="Add card" onPress={() => navigation.navigate("CardCreate")} style={styles.addButtonFull} />
+                <Text style={styles.emptyTitle}>{t("cards.empty_title")}</Text>
+                <Text style={styles.emptySubtitle}>{t("cards.empty_subtitle")}</Text>
+                <GlassButton title={t("cards.add_card")} onPress={() => navigation.navigate("CardCreate")} style={styles.addButtonFull} />
               </GlassCard>
             ) : null}
             {loading && cards.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptySubtitle}>Loading cards...</Text>
+                <Text style={styles.emptySubtitle}>{t("cards.loading")}</Text>
               </GlassCard>
             ) : null}
           </View>

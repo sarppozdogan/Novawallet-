@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { createScaledStyles } from "../theme/scale";
+import { useI18n } from "../i18n/I18nProvider";
 
 type BackButtonProps = {
   onPress: () => void;
@@ -11,11 +12,14 @@ type BackButtonProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function BackButton({ onPress, title = "Back", style }: BackButtonProps) {
+export function BackButton({ onPress, title, style }: BackButtonProps) {
+  const { t } = useI18n();
+  const label = title || t("common.back");
+
   return (
     <Pressable onPress={onPress} style={[styles.button, style]} hitSlop={8}>
       <Ionicons name="chevron-back" size={16} color={colors.textPrimary} />
-      <Text style={styles.text}>{title}</Text>
+      <Text style={styles.text}>{label}</Text>
     </Pressable>
   );
 }

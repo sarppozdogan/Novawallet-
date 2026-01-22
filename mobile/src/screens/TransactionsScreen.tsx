@@ -10,6 +10,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount, formatDate, getTransactionStatusLabel, getTransactionTypeLabel } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
@@ -18,6 +19,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "Transactions">;
 
 export function TransactionsScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { walletId, walletNumber, currencyCode } = route.params;
   const [transactions, setTransactions] = useState<TransactionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export function TransactionsScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load transactions."));
+          setError(formatApiError(err, t("transactions.error_load")));
         }
       } finally {
         if (mounted) {
@@ -56,9 +58,9 @@ export function TransactionsScreen({ navigation, route }: Props) {
         <ScrollView contentContainerStyle={styles.container}>
           <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-          <Text style={styles.kicker}>Transactions</Text>
-          <Text style={styles.title}>Wallet #{walletNumber}</Text>
-          <Text style={styles.subtitle}>Currency {currencyCode}</Text>
+          <Text style={styles.kicker}>{t("transactions.kicker")}</Text>
+          <Text style={styles.title}>{t("transactions.title", { number: walletNumber })}</Text>
+          <Text style={styles.subtitle}>{t("transactions.subtitle", { currency: currencyCode })}</Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
@@ -80,7 +82,7 @@ export function TransactionsScreen({ navigation, route }: Props) {
                   <Text style={styles.cardMeta}>Ref {item.referenceCode}</Text>
                 </View>
                 <GlassButton
-                  title="Details"
+                  title={t("common.details")}
                   variant="ghost"
                   onPress={() => navigation.navigate("TransactionDetail", { transactionId: item.transactionId })}
                   style={styles.detailButton}
@@ -90,10 +92,10 @@ export function TransactionsScreen({ navigation, route }: Props) {
 
             {!loading && transactions.length === 0 ? (
               <GlassCard style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No transactions yet</Text>
-                <Text style={styles.emptySubtitle}>Start with a top up to see activity here.</Text>
+                <Text style={styles.emptyTitle}>{t("transactions.no_items_title")}</Text>
+                <Text style={styles.emptySubtitle}>{t("transactions.no_items_subtitle")}</Text>
                 <GlassButton
-                  title="Top up"
+                  title={t("wallet.top_up")}
                   onPress={() => navigation.navigate("TopUp", { walletId })}
                   style={styles.emptyButton}
                 />
@@ -101,7 +103,7 @@ export function TransactionsScreen({ navigation, route }: Props) {
             ) : null}
             {loading && transactions.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptySubtitle}>Loading transactions...</Text>
+                <Text style={styles.emptySubtitle}>{t("transactions.loading")}</Text>
               </GlassCard>
             ) : null}
           </View>

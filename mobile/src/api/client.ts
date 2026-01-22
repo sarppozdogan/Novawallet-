@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { getToken } from "../storage/authStorage";
+import { translate } from "../i18n/i18n";
 
 const hostUri =
   Constants.expoConfig?.hostUri ||
@@ -88,7 +89,7 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
       baseUrl: API_BASE_URL
     });
     throw new ApiError(
-      `API sunucusuna ulaşılamadı (${API_BASE_URL}). Lütfen ağ bağlantısını ve API adresini kontrol edin. Hata: ${errorMessage}`,
+      translate("error.network_unreachable", { baseUrl: API_BASE_URL, error: errorMessage }),
       "NetworkError"
     );
   }

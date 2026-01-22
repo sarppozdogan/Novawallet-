@@ -1,14 +1,15 @@
 import { ApiError } from "../api/client";
+import { translate } from "../i18n/i18n";
 
-const codeMap: Record<string, string> = {
-  ValidationError: "Please check the information and try again.",
-  OtpInvalid: "Verification code is invalid or expired.",
-  Conflict: "This information is already registered.",
-  Unauthorized: "Unable to authenticate with the provided details.",
-  NotFound: "We could not find your account.",
-  LimitExceeded: "Limit exceeded. Please try a smaller amount.",
-  InsufficientBalance: "Insufficient balance.",
-  WalletInactive: "Wallet is inactive."
+const codeKeyMap: Record<string, string> = {
+  ValidationError: "error.validation",
+  OtpInvalid: "error.otp_invalid",
+  Conflict: "error.conflict",
+  Unauthorized: "error.unauthorized",
+  NotFound: "error.not_found",
+  LimitExceeded: "error.limit_exceeded",
+  InsufficientBalance: "error.insufficient_balance",
+  WalletInactive: "error.wallet_inactive"
 };
 
 export function formatApiError(error: unknown, fallback: string): string {
@@ -16,8 +17,8 @@ export function formatApiError(error: unknown, fallback: string): string {
     if (error.message && error.message !== "Request failed.") {
       return error.message;
     }
-    if (error.code && codeMap[error.code]) {
-      return codeMap[error.code];
+    if (error.code && codeKeyMap[error.code]) {
+      return translate(codeKeyMap[error.code]);
     }
   }
 

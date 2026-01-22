@@ -12,6 +12,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
 import { sanitizeAmountInput, sanitizeWalletNumberInput } from "../utils/validation";
@@ -21,6 +22,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "P2P">;
 
 export function P2PScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const initialWalletId = route.params?.walletId;
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
   const [selectedWalletId, setSelectedWalletId] = useState<number | null>(initialWalletId ?? null);
@@ -47,7 +49,7 @@ export function P2PScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load wallets."));
+          setError(formatApiError(err, t("p2p.error_load_wallets")));
         }
       } finally {
         if (mounted) {
@@ -95,7 +97,7 @@ export function P2PScreen({ navigation, route }: Props) {
         walletId: selectedWallet.id
       });
     } catch (err) {
-      setError(formatApiError(err, "Unable to complete transfer."));
+      setError(formatApiError(err, t("p2p.error_submit")));
     } finally {
       setSubmitting(false);
     }
@@ -108,13 +110,13 @@ export function P2PScreen({ navigation, route }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-            <Text style={styles.kicker}>P2P transfer</Text>
-            <Text style={styles.title}>Send money instantly</Text>
+            <Text style={styles.kicker}>{t("p2p.kicker")}</Text>
+            <Text style={styles.title}>{t("p2p.title")}</Text>
 
             {error ? <ErrorBanner message={error} /> : null}
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Sender wallet</Text>
+              <Text style={styles.sectionTitle}>{t("p2p.section_sender_wallet")}</Text>
               <View style={styles.selectorList}>
                 {wallets.map((wallet) => {
                   const active = wallet.id === selectedWalletId;
@@ -132,42 +134,42 @@ export function P2PScreen({ navigation, route }: Props) {
                   );
                 })}
                 {!loading && wallets.length === 0 ? (
-                  <Text style={styles.emptyInline}>No wallets available.</Text>
+                  <Text style={styles.emptyInline}>{t("p2p.no_wallets")}</Text>
                 ) : null}
               </View>
             </GlassCard>
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Receiver</Text>
+              <Text style={styles.sectionTitle}>{t("p2p.section_receiver")}</Text>
               <GlassInput
-                label="Receiver wallet number"
+                label={t("p2p.receiver_label")}
                 value={receiverWalletNumber}
                 onChangeText={(value) => setReceiverWalletNumber(sanitizeWalletNumberInput(value))}
-                placeholder="Wallet number"
+                placeholder={t("p2p.receiver_placeholder")}
                 autoCapitalize="characters"
               />
             </GlassCard>
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Amount</Text>
+              <Text style={styles.sectionTitle}>{t("p2p.section_amount")}</Text>
               <GlassInput
-                label={`Amount (${selectedWallet?.currencyCode ?? "TRY"})`}
+                label={t("common.amount_with_currency", { currency: selectedWallet?.currencyCode ?? "TRY" })}
                 value={amount}
                 onChangeText={(value) => setAmount(sanitizeAmountInput(value))}
                 keyboardType="decimal-pad"
-                placeholder="0.00"
+                placeholder={t("p2p.amount_placeholder")}
               />
               <GlassInput
-                label="Description (optional)"
+                label={t("p2p.description_label")}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="P2P transfer"
+                placeholder={t("p2p.description_placeholder")}
                 maxLength={140}
               />
             </GlassCard>
 
             <GlassButton
-              title={submitting ? "Processing" : "Send transfer"}
+              title={submitting ? t("common.processing") : t("p2p.submit")}
               onPress={handleSubmit}
               loading={submitting}
               disabled={!canSubmit || submitting}

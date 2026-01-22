@@ -9,19 +9,20 @@ import { GlassButton } from "../components/GlassButton";
 import { GlassCard } from "../components/GlassCard";
 import { GlassInput } from "../components/GlassInput";
 import { LiquidBackground } from "../components/LiquidBackground";
+import { LanguageSelector } from "../components/LanguageSelector";
 import { StepIndicator } from "../components/StepIndicator";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidPhone, isValidTckn, sanitizeNumericInput, sanitizePhoneInput } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
 
-const steps = ["Phone", "OTP", "Profile"];
-
 type Props = NativeStackScreenProps<AuthStackParamList, "RegisterStart">;
 
 export function RegisterStartScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const initialPhone = route.params?.phone ?? "";
   const initialTckn = route.params?.tckn ?? "";
   const [phone, setPhone] = useState(initialPhone);
@@ -38,14 +39,16 @@ export function RegisterStartScreen({ navigation, route }: Props) {
     setInfo(null);
     try {
       await registerStart(phone.trim());
-      setInfo("Verification code sent. Please check your messages.");
+      setInfo(t("auth.register_start_success"));
       navigation.navigate("OtpVerify", { phone: phone.trim(), tckn: tckn.trim() });
     } catch (err) {
-      setError(formatApiError(err, "Unable to start registration."));
+      setError(formatApiError(err, t("auth.register_start_failed")));
     } finally {
       setLoading(false);
     }
   };
+
+  const steps = [t("auth.step_phone"), t("auth.step_otp"), t("auth.step_profile")];
 
   return (
     <LiquidBackground>
@@ -55,36 +58,39 @@ export function RegisterStartScreen({ navigation, route }: Props) {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <View style={styles.container}>
-            <Text style={styles.kicker}>Create account</Text>
-            <Text style={styles.title}>Begin with your phone number</Text>
-            <Text style={styles.subtitle}>We will send a secure verification code in seconds.</Text>
+            <View style={styles.language}>
+              <LanguageSelector />
+            </View>
+            <Text style={styles.kicker}>{t("auth.register.kicker")}</Text>
+            <Text style={styles.title}>{t("auth.register.title")}</Text>
+            <Text style={styles.subtitle}>{t("auth.register.subtitle")}</Text>
 
             <StepIndicator labels={steps} currentIndex={0} />
 
             <GlassCard>
               <GlassInput
-                label="Phone"
+                label={t("auth.phone_label")}
                 value={phone}
                 onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
                 keyboardType="phone-pad"
-                placeholder="+90 5xx xxx xxxx"
+                placeholder={t("auth.phone_placeholder")}
               />
               <GlassInput
-                label="TC Kimlik No"
+                label={t("auth.tckn_label")}
                 value={tckn}
                 onChangeText={(value) => setTckn(sanitizeNumericInput(value, 11))}
                 keyboardType="number-pad"
-                placeholder="11 haneli kimlik numarası"
+                placeholder={t("auth.tckn_placeholder")}
                 maxLength={11}
               />
               <GlassButton
-                title="Send OTP"
+                title={t("auth.send_otp")}
                 onPress={handleContinue}
                 loading={loading}
                 disabled={!canContinue || loading}
               />
               <GlassButton
-                title="I already have an account"
+                title={t("auth.already_have_account")}
                 variant="ghost"
                 style={styles.secondaryButton}
                 onPress={() => navigation.navigate("Login", { phone })}
@@ -95,7 +101,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
 
             <View style={styles.metaRow}>
               <View style={styles.metaDot} />
-              <Text style={styles.metaText}>We never share your number.</Text>
+              <Text style={styles.metaText}>{t("auth.meta_never_share")}</Text>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -114,7 +120,13 @@ const styles = createScaledStyles({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 24
+    paddingTop: 24,
+    position: "relative"
+  },
+  language: {
+    position: "absolute",
+    right: 0,
+    top: 0
   },
   kicker: {
     fontFamily: fonts.bodyMedium,

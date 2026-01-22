@@ -10,6 +10,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
@@ -18,6 +19,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "WalletDetail">;
 
 export function WalletDetailScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { walletId } = route.params;
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export function WalletDetailScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load wallet."));
+          setError(formatApiError(err, t("wallet.error_load")));
         }
       } finally {
         if (mounted) {
@@ -56,26 +58,26 @@ export function WalletDetailScreen({ navigation, route }: Props) {
         <ScrollView contentContainerStyle={styles.container}>
           <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
-          <Text style={styles.kicker}>Wallet detail</Text>
-          <Text style={styles.title}>Your liquid vault</Text>
+          <Text style={styles.kicker}>{t("wallet.detail_kicker")}</Text>
+          <Text style={styles.title}>{t("wallet.detail_title")}</Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
           {wallet ? (
             <>
               <GlassCard style={styles.card}>
-                <Text style={styles.walletLabel}>Balance</Text>
+                <Text style={styles.walletLabel}>{t("wallet.balance")}</Text>
                 <Text style={styles.walletBalance}>{formatAmount(wallet.balance, wallet.currencyCode)}</Text>
                 <View style={styles.metaRow}>
                   <Text style={styles.metaText}>#{wallet.walletNumber}</Text>
                   <View style={styles.dot} />
                   <Text style={styles.metaText}>{wallet.currencyCode}</Text>
                   <View style={styles.dot} />
-                  <Text style={styles.metaText}>{wallet.isActive ? "Active" : "Inactive"}</Text>
+                  <Text style={styles.metaText}>{wallet.isActive ? t("common.active") : t("common.inactive")}</Text>
                 </View>
                 {wallet.virtualIban ? (
                   <View style={styles.ibanRow}>
-                    <Text style={styles.ibanLabel}>Virtual IBAN</Text>
+                    <Text style={styles.ibanLabel}>{t("wallet.virtual_iban")}</Text>
                     <Text style={styles.ibanValue}>{wallet.virtualIban}</Text>
                   </View>
                 ) : null}
@@ -83,12 +85,12 @@ export function WalletDetailScreen({ navigation, route }: Props) {
 
               <View style={styles.actions}>
                 <GlassButton
-                  title="Top up"
+                  title={t("wallet.top_up")}
                   onPress={() => navigation.navigate("TopUp", { walletId: wallet.id })}
                   style={styles.actionButton}
                 />
                 <GlassButton
-                  title="Withdraw"
+                  title={t("wallet.withdraw")}
                   variant="ghost"
                   onPress={() => navigation.navigate("Withdraw", { walletId: wallet.id })}
                   style={styles.actionButton}
@@ -96,12 +98,12 @@ export function WalletDetailScreen({ navigation, route }: Props) {
               </View>
               <View style={styles.actions}>
                 <GlassButton
-                  title="Send"
+                  title={t("wallet.send")}
                   onPress={() => navigation.navigate("P2P", { walletId: wallet.id })}
                   style={styles.actionButton}
                 />
                 <GlassButton
-                  title="Transactions"
+                  title={t("wallet.transactions")}
                   variant="ghost"
                   onPress={() =>
                     navigation.navigate("Transactions", {
@@ -118,7 +120,7 @@ export function WalletDetailScreen({ navigation, route }: Props) {
 
           {loading && !wallet ? (
             <GlassCard>
-              <Text style={styles.loadingText}>Loading wallet...</Text>
+              <Text style={styles.loadingText}>{t("wallet.loading_single")}</Text>
             </GlassCard>
           ) : null}
         </ScrollView>

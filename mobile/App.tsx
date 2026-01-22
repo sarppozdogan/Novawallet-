@@ -8,6 +8,7 @@ import { AuthNavigator } from "./src/navigation/AuthNavigator";
 import { MainNavigator } from "./src/navigation/MainNavigator";
 import { clearToken, getToken, setToken } from "./src/storage/authStorage";
 import { delay } from "./src/utils/time";
+import { I18nProvider } from "./src/i18n/I18nProvider";
 
 type RootStackParamList = {
   Auth: undefined;
@@ -66,21 +67,23 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer theme={navTheme}>
-        <StatusBar style="light" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {bootState.authed ? (
-            <Stack.Screen name="Home">
-              {() => <MainNavigator onSignOut={handleSignOut} />}
-            </Stack.Screen>
-          ) : (
-            <Stack.Screen name="Auth">
-              {() => <AuthNavigator onAuthenticated={handleAuth} />}
-            </Stack.Screen>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <I18nProvider>
+      <SafeAreaProvider>
+        <NavigationContainer theme={navTheme}>
+          <StatusBar style="light" />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {bootState.authed ? (
+              <Stack.Screen name="Home">
+                {() => <MainNavigator onSignOut={handleSignOut} />}
+              </Stack.Screen>
+            ) : (
+              <Stack.Screen name="Auth">
+                {() => <AuthNavigator onAuthenticated={handleAuth} />}
+              </Stack.Screen>
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </I18nProvider>
   );
 }

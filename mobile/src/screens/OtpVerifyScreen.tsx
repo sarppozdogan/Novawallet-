@@ -13,15 +13,15 @@ import { StepIndicator } from "../components/StepIndicator";
 import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidOtp, sanitizeNumericInput } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
 
-const steps = ["Phone", "OTP", "Profile"];
-
 type Props = NativeStackScreenProps<AuthStackParamList, "OtpVerify">;
 
 export function OtpVerifyScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { phone, tckn } = route.params;
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ export function OtpVerifyScreen({ navigation, route }: Props) {
       await verifyOtp(phone, code.trim());
       navigation.navigate("ProfileComplete", { phone, tckn });
     } catch (err) {
-      setError(formatApiError(err, "Unable to verify OTP."));
+      setError(formatApiError(err, t("auth.otp_verify_failed")));
     } finally {
       setLoading(false);
     }
@@ -60,44 +60,47 @@ export function OtpVerifyScreen({ navigation, route }: Props) {
     setInfo(null);
     try {
       await registerStart(phone);
-      setInfo("A new verification code has been sent.");
+      setInfo(t("auth.otp_resend_success"));
       setCooldown(30);
     } catch (err) {
-      setError(formatApiError(err, "Unable to resend OTP."));
+      setError(formatApiError(err, t("auth.otp_resend_failed")));
     } finally {
       setResending(false);
     }
   };
+
+  const steps = [t("auth.step_phone"), t("auth.step_otp"), t("auth.step_profile")];
+  const resendLabel = cooldown > 0 ? t("auth.resend_in", { time: `00:${String(cooldown).padStart(2, "0")}` }) : t("auth.resend_code");
 
   return (
     <LiquidBackground>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.container}>
-            <Text style={styles.kicker}>Security check</Text>
-            <Text style={styles.title}>Enter verification code</Text>
-            <Text style={styles.subtitle}>Code sent to {phone}</Text>
+            <Text style={styles.kicker}>{t("auth.otp.kicker")}</Text>
+            <Text style={styles.title}>{t("auth.otp.title")}</Text>
+            <Text style={styles.subtitle}>{t("auth.otp.subtitle", { phone })}</Text>
 
             <StepIndicator labels={steps} currentIndex={1} />
 
             <GlassCard>
               <GlassInput
-                label="OTP Code"
+                label={t("auth.otp.label")}
                 value={code}
                 onChangeText={(value) => setCode(sanitizeNumericInput(value, 6))}
                 keyboardType="number-pad"
-                placeholder="000000"
+                placeholder={t("auth.otp.placeholder")}
                 maxLength={6}
               />
-              <GlassButton title="Verify" onPress={handleVerify} loading={loading} disabled={!canContinue || loading} />
+              <GlassButton title={t("auth.verify")} onPress={handleVerify} loading={loading} disabled={!canContinue || loading} />
               <GlassButton
-                title="Edit phone"
+                title={t("auth.edit_phone")}
                 variant="ghost"
                 style={styles.secondaryButton}
                 onPress={() => navigation.navigate("RegisterStart", { phone, tckn })}
               />
               <GlassButton
-                title={cooldown > 0 ? `Resend in 00:${String(cooldown).padStart(2, "0")}` : "Resend code"}
+                title={resendLabel}
                 variant="ghost"
                 style={styles.secondaryButton}
                 onPress={handleResend}

@@ -11,6 +11,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidIban, sanitizeIbanInput } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
@@ -19,6 +20,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "BankAccountCreate">;
 
 export function BankAccountCreateScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [iban, setIban] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountHolderName, setAccountHolderName] = useState("");
@@ -40,7 +42,7 @@ export function BankAccountCreateScreen({ navigation }: Props) {
       });
       navigation.replace("BankAccountDetail", { accountId: result.id });
     } catch (err) {
-      setError(formatApiError(err, "Unable to add bank account."));
+      setError(formatApiError(err, t("bank_accounts.create.error")));
     } finally {
       setLoading(false);
     }
@@ -53,14 +55,14 @@ export function BankAccountCreateScreen({ navigation }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             <BackButton onPress={() => navigation.goBack()} />
 
-            <Text style={styles.kicker}>Add account</Text>
-            <Text style={styles.title}>Link your bank</Text>
+            <Text style={styles.kicker}>{t("bank_accounts.create.kicker")}</Text>
+            <Text style={styles.title}>{t("bank_accounts.create.title")}</Text>
 
             {error ? <ErrorBanner message={error} /> : null}
 
             <GlassCard style={styles.card}>
               <GlassInput
-                label="IBAN"
+                label={t("bank_accounts.iban_label")}
                 value={iban}
                 onChangeText={(value) => setIban(sanitizeIbanInput(value))}
                 placeholder="TR00 0000 0000 0000 0000 0000 00"
@@ -68,21 +70,21 @@ export function BankAccountCreateScreen({ navigation }: Props) {
                 maxLength={34}
               />
               <GlassInput
-                label="Bank name"
+                label={t("bank_accounts.bank_name_label")}
                 value={bankName}
                 onChangeText={setBankName}
-                placeholder="Bank name"
+                placeholder={t("bank_accounts.bank_name_placeholder")}
                 maxLength={100}
               />
               <GlassInput
-                label="Account holder"
+                label={t("bank_accounts.account_holder_label")}
                 value={accountHolderName}
                 onChangeText={setAccountHolderName}
-                placeholder="Full name"
+                placeholder={t("bank_accounts.account_holder_placeholder")}
                 maxLength={150}
               />
               <GlassButton
-                title="Add bank account"
+                title={t("bank_accounts.create.add_button")}
                 onPress={handleSubmit}
                 loading={loading}
                 disabled={!canSubmit || loading}

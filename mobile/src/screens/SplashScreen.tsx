@@ -6,8 +6,10 @@ import { GlassCard } from "../components/GlassCard";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { createScaledStyles } from "../theme/scale";
+import { useI18n } from "../i18n/I18nProvider";
 
 export function SplashScreen() {
+  const { t } = useI18n();
   const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -37,11 +39,11 @@ export function SplashScreen() {
               </View>
               <View>
                 <Text style={styles.brand}>NovaWallet</Text>
-                <Text style={styles.tagline}>Liquid clarity for modern money</Text>
+                <Text style={styles.tagline}>{t("splash.tagline")}</Text>
               </View>
             </View>
             <View style={styles.ribbon}>
-              <Text style={styles.ribbonText}>Secured • Instant • Transparent</Text>
+              <Text style={styles.ribbonText}>{t("splash.ribbon")}</Text>
             </View>
           </GlassCard>
           <View style={styles.progressTrack}>

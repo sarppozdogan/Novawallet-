@@ -8,9 +8,11 @@ import { ErrorBanner } from "../components/ErrorBanner";
 import { GlassButton } from "../components/GlassButton";
 import { GlassCard } from "../components/GlassCard";
 import { LiquidBackground } from "../components/LiquidBackground";
+import { LanguageSelector } from "../components/LanguageSelector";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
 import { createScaledStyles } from "../theme/scale";
@@ -20,6 +22,7 @@ type Props = NativeStackScreenProps<MainStackParamList, "Wallets"> & {
 };
 
 export function WalletsScreen({ navigation, onSignOut }: Props) {
+  const { t } = useI18n();
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +34,7 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
       const data = await getWallets();
       setWallets(data);
     } catch (err) {
-      setError(formatApiError(err, "Unable to load wallets."));
+      setError(formatApiError(err, t("wallet.error_load")));
     } finally {
       setLoading(false);
     }
@@ -50,19 +53,22 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
           <View style={styles.header}>
             <View>
               <Text style={styles.kicker}>NovaWallet</Text>
-              <Text style={styles.title}>Your wallets</Text>
+              <Text style={styles.title}>{t("wallet.title")}</Text>
             </View>
-            <GlassButton title="Sign out" variant="ghost" onPress={onSignOut} style={styles.signOut} />
+            <View style={styles.headerActions}>
+              <LanguageSelector />
+              <GlassButton title={t("common.sign_out")} variant="ghost" onPress={onSignOut} style={styles.signOut} />
+            </View>
           </View>
 
           <View style={styles.actionsRow}>
             <GlassButton
-              title="Top up"
+              title={t("wallet.top_up")}
               onPress={() => navigation.navigate("TopUp", {})}
               style={styles.actionButton}
             />
             <GlassButton
-              title="Withdraw"
+              title={t("wallet.withdraw")}
               variant="ghost"
               onPress={() => navigation.navigate("Withdraw", {})}
               style={styles.actionButton}
@@ -70,12 +76,12 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
           </View>
           <View style={styles.actionsRow}>
             <GlassButton
-              title="Send"
+              title={t("wallet.send")}
               onPress={() => navigation.navigate("P2P", {})}
               style={styles.actionButton}
             />
             <GlassButton
-              title="Cards"
+              title={t("wallet.cards")}
               variant="ghost"
               onPress={() => navigation.navigate("Cards")}
               style={styles.actionButton}
@@ -83,13 +89,13 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
           </View>
           <View style={styles.actionsRow}>
             <GlassButton
-              title="Bank accounts"
+              title={t("wallet.bank_accounts")}
               variant="ghost"
               onPress={() => navigation.navigate("BankAccounts")}
               style={styles.actionButton}
             />
             <GlassButton
-              title="Refresh"
+              title={t("common.refresh")}
               variant="ghost"
               onPress={loadWallets}
               style={styles.actionButton}
@@ -102,7 +108,7 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
           <View style={styles.list}>
             {wallets.map((wallet) => (
               <GlassCard key={wallet.id} style={styles.card}>
-                <Text style={styles.walletLabel}>{wallet.isActive ? "Active wallet" : "Inactive wallet"}</Text>
+                <Text style={styles.walletLabel}>{wallet.isActive ? t("wallet.active") : t("wallet.inactive")}</Text>
                 <Text style={styles.walletBalance}>{formatAmount(wallet.balance, wallet.currencyCode)}</Text>
                 <View style={styles.walletMeta}>
                   <Text style={styles.walletMetaText}>#{wallet.walletNumber}</Text>
@@ -111,13 +117,13 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
                 </View>
                 <View style={styles.cardActions}>
                   <GlassButton
-                    title="Details"
+                    title={t("common.details")}
                     variant="ghost"
                     onPress={() => navigation.navigate("WalletDetail", { walletId: wallet.id })}
                     style={styles.cardButton}
                   />
                   <GlassButton
-                    title="Transactions"
+                    title={t("wallet.transactions")}
                     onPress={() =>
                       navigation.navigate("Transactions", {
                         walletId: wallet.id,
@@ -132,13 +138,13 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
             ))}
             {!loading && wallets.length === 0 ? (
               <GlassCard style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No wallets yet</Text>
-                <Text style={styles.emptySubtitle}>Complete your profile to activate your first wallet.</Text>
+                <Text style={styles.emptyTitle}>{t("wallet.no_wallets_title")}</Text>
+                <Text style={styles.emptySubtitle}>{t("wallet.no_wallets_subtitle")}</Text>
               </GlassCard>
             ) : null}
             {loading && wallets.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptySubtitle}>Loading wallets...</Text>
+                <Text style={styles.emptySubtitle}>{t("wallet.loading")}</Text>
               </GlassCard>
             ) : null}
           </View>
@@ -162,6 +168,11 @@ const styles = createScaledStyles({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
   },
   kicker: {
     fontFamily: fonts.bodyMedium,

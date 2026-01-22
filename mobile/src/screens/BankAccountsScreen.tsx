@@ -11,6 +11,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { createScaledStyles } from "../theme/scale";
 import { BackButton } from "../components/BackButton";
@@ -19,6 +20,7 @@ import { BackButton } from "../components/BackButton";
 type Props = NativeStackScreenProps<MainStackParamList, "BankAccounts">;
 
 export function BankAccountsScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [accounts, setAccounts] = useState<BankAccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function BankAccountsScreen({ navigation }: Props) {
       const data = await getBankAccounts(true);
       setAccounts(data);
     } catch (err) {
-      setError(formatApiError(err, "Unable to load bank accounts."));
+      setError(formatApiError(err, t("bank_accounts.error_load")));
     } finally {
       setLoading(false);
     }
@@ -49,14 +51,14 @@ export function BankAccountsScreen({ navigation }: Props) {
           <View style={styles.header}>
             <BackButton onPress={() => navigation.goBack()} />
             <GlassButton
-              title="Add"
+              title={t("common.add")}
               onPress={() => navigation.navigate("BankAccountCreate")}
               style={styles.addButton}
             />
           </View>
 
-          <Text style={styles.kicker}>Bank accounts</Text>
-          <Text style={styles.title}>Linked banks</Text>
+          <Text style={styles.kicker}>{t("bank_accounts.kicker")}</Text>
+          <Text style={styles.title}>{t("bank_accounts.title")}</Text>
 
           {error ? <ErrorBanner message={error} /> : null}
 
@@ -68,10 +70,10 @@ export function BankAccountsScreen({ navigation }: Props) {
                 <Text style={styles.cardMeta}>{account.accountHolderName}</Text>
                 <View style={styles.cardFooter}>
                   <Text style={[styles.status, account.isActive ? styles.statusActive : styles.statusInactive]}>
-                    {account.isActive ? "Active" : "Inactive"}
+                    {account.isActive ? t("common.active") : t("common.inactive")}
                   </Text>
                   <GlassButton
-                    title="Details"
+                    title={t("common.details")}
                     variant="ghost"
                     onPress={() => navigation.navigate("BankAccountDetail", { accountId: account.id })}
                     style={styles.detailButton}
@@ -81,10 +83,10 @@ export function BankAccountsScreen({ navigation }: Props) {
             ))}
             {!loading && accounts.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptyTitle}>No bank accounts</Text>
-                <Text style={styles.emptySubtitle}>Add your first bank account to top up or withdraw.</Text>
+                <Text style={styles.emptyTitle}>{t("bank_accounts.empty_title")}</Text>
+                <Text style={styles.emptySubtitle}>{t("bank_accounts.empty_subtitle")}</Text>
                 <GlassButton
-                  title="Add bank account"
+                  title={t("bank_accounts.add_button")}
                   onPress={() => navigation.navigate("BankAccountCreate")}
                   style={styles.addButtonFull}
                 />
@@ -92,7 +94,7 @@ export function BankAccountsScreen({ navigation }: Props) {
             ) : null}
             {loading && accounts.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptySubtitle}>Loading bank accounts...</Text>
+                <Text style={styles.emptySubtitle}>{t("bank_accounts.loading")}</Text>
               </GlassCard>
             ) : null}
           </View>
