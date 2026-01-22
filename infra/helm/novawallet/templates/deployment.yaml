@@ -28,6 +28,8 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Release.Name }}-secrets
+          resources:
+{{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health

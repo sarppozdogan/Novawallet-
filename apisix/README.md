@@ -26,6 +26,17 @@ JWT_KEY=novawallet \
 ./apisix/scripts/bootstrap.sh
 ```
 
+Optional: configure OIDC with Keycloak
+
+```bash
+APISIX_ADMIN_KEY=CHANGE_ME_APISIX_ADMIN_KEY \
+UPSTREAM_PORT=5100 \
+OIDC_DISCOVERY=http://localhost:8081/realms/novawallet/.well-known/openid-configuration \
+OIDC_CLIENT_ID=novawallet-api \
+OIDC_CLIENT_SECRET=novawallet-secret \
+./apisix/scripts/bootstrap-oidc.sh
+```
+
 4) Call APIs via Gateway
 
 ```bash

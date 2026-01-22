@@ -12,6 +12,9 @@ service:
 ingress:
   enabled: true
   host: novawallet.local
+  tls:
+    enabled: true
+    secretName: novawallet-tls
 
 env:
   ASPNETCORE_ENVIRONMENT: Production
@@ -23,3 +26,11 @@ secrets:
   JwtSettings__Issuer: "novawallet"
   JwtSettings__Audience: "novawallet"
   JwtSettings__SecretKey: "CHANGE_ME_32_CHAR_SECRET_KEY_123456"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"

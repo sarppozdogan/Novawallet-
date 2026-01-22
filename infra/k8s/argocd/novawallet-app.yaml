@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "https://example.com/novawallet.git"
+    repoURL: "https://github.com/sarppozdogan/Novawallet-.git"
     targetRevision: main
     path: infra/helm/novawallet
   destination:

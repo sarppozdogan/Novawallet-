@@ -4,6 +4,10 @@ metadata:
   name: novawallet-api
   namespace: novawallet
 spec:
+  tls:
+    - hosts:
+        - novawallet.local
+      secretName: novawallet-tls
   rules:
     - host: novawallet.local
       http:

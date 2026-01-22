@@ -39,3 +39,5 @@ dotnet run --project src/NovaWallet.API --urls http://localhost:5000
 ## Kubernetes / Helm / IaC
 
 See `infra/k8s`, `infra/helm`, `infra/terraform`, `infra/ansible` for deployment templates.
+
+TLS note: Ingress expects a TLS secret named `novawallet-tls` (adjust as needed).

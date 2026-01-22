@@ -72,6 +72,13 @@ spec:
             - containerPort: 4317
             - containerPort: 4318
             - containerPort: 9464
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           volumeMounts:
             - name: config
               mountPath: /etc/otel-collector
