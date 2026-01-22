@@ -1,49 +1,6 @@
 # NovaWallet
 
-## iOS Simulator'de Çalıştırma (iPhone 17 Pro Max)
-
-### Hızlı Başlangıç
-
-Backend ve Frontend'i birlikte başlatmak için:
-
-```bash
-./scripts/start-all.sh
-```
-
-### Adım Adım
-
-1. **Backend'i Başlat**
-
-```bash
-# Docker servislerini başlat
-docker compose up -d
-
-# Backend'i başlat
-./scripts/start-backend.sh
-```
-
-2. **Frontend'i iOS Simulator'de Başlat**
-
-```bash
-cd mobile
-npm run ios:simulator
-```
-
-Script otomatik olarak:
-- Mac IP adresini bulur
-- Backend bağlantısını kontrol eder
-- iPhone 17 Pro Max simulator'ünü bulur
-- Expo'yu iOS simulator'de başlatır
-
-**Not:** İlk kez çalıştırıyorsanız, `mobile` dizininde `npm install` çalıştırın.
-
-### Detaylı Bilgi
-
-Mobile uygulama için detaylı bilgi: [mobile/README.md](mobile/README.md)
-
----
-
-## Quickstart (local MVP)
+Quickstart (local MVP)
 
 1) Create local env file and set a strong password
 
@@ -81,7 +38,7 @@ NOVA_DB_CONNECTION="Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Passw
 5) Run API
 
 ```bash
-dotnet run --project src/NovaWallet.API --urls http://0.0.0.0:5100
+dotnet run --project src/NovaWallet.API
 ```
 
 Notes
@@ -99,14 +56,13 @@ docker compose up -d apisix etcd
 2) Start API (HTTP)
 
 ```bash
-dotnet run --project src/NovaWallet.API --urls http://0.0.0.0:5100
+dotnet run --project src/NovaWallet.API --urls http://localhost:5000
 ```
 
 3) Configure APISIX routes and JWT validation
 
 ```bash
 APISIX_ADMIN_KEY=CHANGE_ME_APISIX_ADMIN_KEY \
-UPSTREAM_PORT=5100 \
 JWT_SECRET=CHANGE_ME_32_CHAR_SECRET_KEY_123456 \
 JWT_KEY=novawallet \
 ./apisix/scripts/bootstrap.sh
