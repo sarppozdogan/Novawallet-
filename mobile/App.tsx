@@ -62,28 +62,28 @@ export default function App() {
     }
   };
 
-  if (bootState.checking) {
-    return <SplashScreen />;
-  }
-
   return (
     <I18nProvider>
-      <SafeAreaProvider>
-        <NavigationContainer theme={navTheme}>
-          <StatusBar style="light" />
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {bootState.authed ? (
-              <Stack.Screen name="Home">
-                {() => <MainNavigator onSignOut={handleSignOut} />}
-              </Stack.Screen>
-            ) : (
-              <Stack.Screen name="Auth">
-                {() => <AuthNavigator onAuthenticated={handleAuth} />}
-              </Stack.Screen>
-            )}
-          </Stack.Navigator>
-        </NavigationContainer>
-      </SafeAreaProvider>
+      {bootState.checking ? (
+        <SplashScreen />
+      ) : (
+        <SafeAreaProvider>
+          <NavigationContainer theme={navTheme}>
+            <StatusBar style="light" />
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              {bootState.authed ? (
+                <Stack.Screen name="Home">
+                  {() => <MainNavigator onSignOut={handleSignOut} />}
+                </Stack.Screen>
+              ) : (
+                <Stack.Screen name="Auth">
+                  {() => <AuthNavigator onAuthenticated={handleAuth} />}
+                </Stack.Screen>
+              )}
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SafeAreaProvider>
+      )}
     </I18nProvider>
   );
 }
