@@ -8,7 +8,9 @@ const hostUri =
   "";
 
 const inferredHost = hostUri ? hostUri.split(":")[0] : "";
-const fallbackHost = process.env.EXPO_PUBLIC_API_HOST || inferredHost || "localhost";
+const isIosSimulator = Boolean(Constants.platform?.ios?.simulator);
+const defaultHost = isIosSimulator ? "localhost" : inferredHost;
+const fallbackHost = process.env.EXPO_PUBLIC_API_HOST || defaultHost || "localhost";
 const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5100";
 const DEFAULT_BASE_URL = `http://${fallbackHost}:${fallbackPort}`;
 
