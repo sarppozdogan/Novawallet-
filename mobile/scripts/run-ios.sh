@@ -73,27 +73,34 @@ else
 fi
 
 # Backend'in çalışıp çalışmadığını kontrol et
-echo -e "${YELLOW}🔍 Backend kontrol ediliyor...${NC}"
-if curl -s "http://localhost:${API_PORT}/swagger" > /dev/null 2>&1 || curl -s "http://localhost:${API_PORT}/api" > /dev/null 2>&1; then
+echo -e "${YELLOW}🔍 Backend kontrol ediliyor (localhost:${API_PORT})...${NC}"
+BACKEND_CHECK=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${API_PORT}/swagger" 2>/dev/null || echo "000")
+if [ "$BACKEND_CHECK" = "200" ] || [ "$BACKEND_CHECK" = "301" ] || [ "$BACKEND_CHECK" = "302" ]; then
+  echo -e "${GREEN}✓ Backend çalışıyor (localhost:${API_PORT})${NC}"
+elif curl -s "http://localhost:${API_PORT}/api" > /dev/null 2>&1; then
   echo -e "${GREEN}✓ Backend çalışıyor (localhost:${API_PORT})${NC}"
 else
-  echo -e "${RED}⚠ Backend çalışmıyor görünüyor. Lütfen backend'i başlatın:${NC}"
-  echo -e "${YELLOW}  cd ../.. && dotnet run --project src/NovaWallet.API --urls http://0.0.0.0:${API_PORT}${NC}"
-  echo -e "${YELLOW}Devam etmek için Enter'a basın veya Ctrl+C ile iptal edin...${NC}"
+  echo -e "${RED}❌ Backend çalışmıyor! (localhost:${API_PORT})${NC}"
+  echo -e "${RED}   Backend'i başlatmak için:${NC}"
+  echo -e "${YELLOW}   1. Başka bir terminal açın${NC}"
+  echo -e "${YELLOW}   2. Şu komutu çalıştırın:${NC}"
+  echo -e "${GREEN}      cd $(dirname "$0")/../.. && ./scripts/start-backend.sh${NC}"
+  echo -e "${YELLOW}   3. Backend başladıktan sonra bu script'i tekrar çalıştırın${NC}"
+  echo ""
+  echo -e "${YELLOW}Devam etmek için Enter'a basın (backend olmadan çalışmayacak) veya Ctrl+C ile iptal edin...${NC}"
   read
 fi
 
-# API Base URL'i ayarla (iOS Simulator için localhost)
-API_HOST="${NOVA_API_HOST:-localhost}"
+# API Base URL'i ayarla (iOS Simulator için HER ZAMAN localhost)
+# iOS Simulator Mac IP'sine erişemez, bu yüzden localhost kullanmalıyız
+API_HOST="localhost"
 export EXPO_PUBLIC_API_BASE_URL="http://${API_HOST}:${API_PORT}"
 export EXPO_PUBLIC_API_PORT="${API_PORT}"
 export EXPO_PUBLIC_API_HOST="${API_HOST}"
 echo -e "${GREEN}✓ API Base URL: ${EXPO_PUBLIC_API_BASE_URL}${NC}"
 echo -e "${GREEN}✓ API Port: ${API_PORT}${NC}"
-echo -e "${GREEN}✓ API Host: ${API_HOST}${NC}"
-if [ "${API_HOST}" != "localhost" ]; then
-  echo -e "${YELLOW}ℹ iOS Simulator için localhost önerilir. Cihaz kullanıyorsanız NOVA_API_HOST'u Mac IP'sine ayarlayın.${NC}"
-fi
+echo -e "${GREEN}✓ API Host: ${API_HOST} (iOS Simulator için zorunlu)${NC}"
+echo -e "${YELLOW}ℹ Backend'in ${API_HOST}:${API_PORT} adresinde çalıştığından emin olun!${NC}"
 
 # Mobile dizinine git
 cd "$(dirname "$0")/.."
