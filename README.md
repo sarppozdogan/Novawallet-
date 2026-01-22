@@ -1,6 +1,49 @@
 # NovaWallet
 
-Quickstart (local MVP)
+## iOS Simulator'de Çalıştırma (iPhone 17 Pro Max)
+
+### Hızlı Başlangıç
+
+Backend ve Frontend'i birlikte başlatmak için:
+
+```bash
+./scripts/start-all.sh
+```
+
+### Adım Adım
+
+1. **Backend'i Başlat**
+
+```bash
+# Docker servislerini başlat
+docker compose up -d
+
+# Backend'i başlat
+./scripts/start-backend.sh
+```
+
+2. **Frontend'i iOS Simulator'de Başlat**
+
+```bash
+cd mobile
+npm run ios:simulator
+```
+
+Script otomatik olarak:
+- Mac IP adresini bulur
+- Backend bağlantısını kontrol eder
+- iPhone 17 Pro Max simulator'ünü bulur
+- Expo'yu iOS simulator'de başlatır
+
+**Not:** İlk kez çalıştırıyorsanız, `mobile` dizininde `npm install` çalıştırın.
+
+### Detaylı Bilgi
+
+Mobile uygulama için detaylı bilgi: [mobile/README.md](mobile/README.md)
+
+---
+
+## Quickstart (local MVP)
 
 1) Create local env file and set a strong password
 

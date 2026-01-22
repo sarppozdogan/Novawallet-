@@ -12,7 +12,8 @@
       "backgroundColor": "#0B0F1F"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.novawallet.mobile"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
