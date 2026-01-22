@@ -13,8 +13,8 @@ import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
-import {
 import { createScaledStyles } from "../theme/scale";
+import {
   isValidCurrencyCode,
   isValidPassword,
   isValidTaxNumber,
