@@ -37,19 +37,36 @@ else
   echo -e "${GREEN}✓ Mac IP adresi: ${MAC_IP}${NC}"
 fi
 
-# iPhone 17 Pro Max simulator'ünü bul veya oluştur
+# iPhone 17 Pro Max simulator'ünü bul veya alternatif bir simulator seç
 echo -e "${YELLOW}📱 iPhone 17 Pro Max simulator'ü kontrol ediliyor...${NC}"
 
-# Önce mevcut simulator'leri listele
+# Önce iPhone 17 Pro Max'i ara
 DEVICE_ID=$(xcrun simctl list devices available | grep -i "iPhone 17 Pro Max" | grep -o '[A-F0-9-]\{36\}' | head -1)
 
+# Bulunamazsa iPhone 16 Pro Max'i dene
 if [ -z "$DEVICE_ID" ]; then
-  echo -e "${YELLOW}⚠ iPhone 17 Pro Max bulunamadı. Mevcut iPhone simulator'lerini listeliyorum...${NC}"
+  echo -e "${YELLOW}⚠ iPhone 17 Pro Max bulunamadı. iPhone 16 Pro Max aranıyor...${NC}"
+  DEVICE_ID=$(xcrun simctl list devices available | grep -i "iPhone 16 Pro Max" | grep -o '[A-F0-9-]\{36\}' | head -1)
+fi
+
+# Hala bulunamazsa herhangi bir Pro Max modelini dene
+if [ -z "$DEVICE_ID" ]; then
+  echo -e "${YELLOW}⚠ iPhone 16 Pro Max bulunamadı. Herhangi bir Pro Max modeli aranıyor...${NC}"
+  DEVICE_ID=$(xcrun simctl list devices available | grep -i "iPhone.*Pro Max" | grep -o '[A-F0-9-]\{36\}' | head -1)
+fi
+
+# Hala bulunamazsa herhangi bir iPhone'u kullan
+if [ -z "$DEVICE_ID" ]; then
+  echo -e "${YELLOW}⚠ Pro Max modeli bulunamadı. Herhangi bir iPhone aranıyor...${NC}"
+  DEVICE_ID=$(xcrun simctl list devices available | grep -i "iPhone" | grep -o '[A-F0-9-]\{36\}' | head -1)
+fi
+
+if [ -z "$DEVICE_ID" ]; then
+  echo -e "${YELLOW}⚠ iPhone simulator bulunamadı. Expo otomatik olarak bir simulator seçecektir.${NC}"
   xcrun simctl list devices available | grep -i "iPhone" | head -5
-  echo -e "${YELLOW}Lütfen mevcut bir iPhone simulator seçin veya iPhone 17 Pro Max'i Xcode'dan oluşturun.${NC}"
-  echo -e "${YELLOW}Alternatif olarak, Expo otomatik olarak bir simulator seçecektir.${NC}"
 else
-  echo -e "${GREEN}✓ iPhone 17 Pro Max bulundu: ${DEVICE_ID}${NC}"
+  DEVICE_NAME=$(xcrun simctl list devices available | grep "$DEVICE_ID" | sed 's/.*(\(.*\)).*/\1/' | head -1)
+  echo -e "${GREEN}✓ Simulator bulundu: ${DEVICE_NAME} (${DEVICE_ID})${NC}"
 fi
 
 # Backend'in çalışıp çalışmadığını kontrol et
@@ -84,10 +101,14 @@ echo -e "${YELLOW}iPhone 17 Pro Max'i manuel olarak seçmek için Xcode > Window
 # iPhone 17 Pro Max varsa onu kullan, yoksa Expo'nun otomatik seçimine bırak
 if [ -n "$DEVICE_ID" ]; then
   # Simulator'ü başlat
-  xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-  # Expo'yu belirli device ile başlat
-  npx expo start --ios --device "$DEVICE_ID"
+  echo -e "${YELLOW}📱 iPhone 17 Pro Max simulator'ü başlatılıyor...${NC}"
+  xcrun simctl boot "$DEVICE_ID" 2>/dev/null || echo -e "${YELLOW}⚠ Simulator zaten çalışıyor olabilir${NC}"
+  # Simulator'ün açılması için kısa bir bekleme
+  sleep 2
+  # Expo'yu başlat (Expo otomatik olarak açık simulator'ü kullanacak)
+  npx expo start --ios
 else
   # Expo otomatik seçim yapsın
+  echo -e "${YELLOW}📱 Expo otomatik olarak bir iOS simulator seçecek...${NC}"
   npx expo start --ios
 fi
