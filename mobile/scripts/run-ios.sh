@@ -83,13 +83,17 @@ else
   read
 fi
 
-# API Base URL'i ayarla
-export EXPO_PUBLIC_API_BASE_URL="http://${MAC_IP}:${API_PORT}"
+# API Base URL'i ayarla (iOS Simulator için localhost)
+API_HOST="${NOVA_API_HOST:-localhost}"
+export EXPO_PUBLIC_API_BASE_URL="http://${API_HOST}:${API_PORT}"
 export EXPO_PUBLIC_API_PORT="${API_PORT}"
-export EXPO_PUBLIC_API_HOST="${MAC_IP}"
+export EXPO_PUBLIC_API_HOST="${API_HOST}"
 echo -e "${GREEN}✓ API Base URL: ${EXPO_PUBLIC_API_BASE_URL}${NC}"
 echo -e "${GREEN}✓ API Port: ${API_PORT}${NC}"
-echo -e "${GREEN}✓ API Host: ${MAC_IP}${NC}"
+echo -e "${GREEN}✓ API Host: ${API_HOST}${NC}"
+if [ "${API_HOST}" != "localhost" ]; then
+  echo -e "${YELLOW}ℹ iOS Simulator için localhost önerilir. Cihaz kullanıyorsanız NOVA_API_HOST'u Mac IP'sine ayarlayın.${NC}"
+fi
 
 # Mobile dizinine git
 cd "$(dirname "$0")/.."
