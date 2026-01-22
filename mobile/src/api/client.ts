@@ -2,6 +2,7 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { getToken } from "../storage/authStorage";
 import { translate } from "../i18n/i18n";
+import { getMockResponse, isMockablePath, shouldUseMockByDefault } from "./mockServer";
 
 const hostUri =
   Constants.expoConfig?.hostUri ||
@@ -79,6 +80,19 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
   };
   
   const url = `${API_BASE_URL}${path}`;
+  const method = (options?.method || "GET").toUpperCase();
+  const canMock = isMockablePath(path);
+  const forceMock = shouldUseMockByDefault() && canMock;
+  if (forceMock) {
+    const mock = getMockResponse(path, options);
+    if (mock !== undefined) {
+      if (__DEV__) {
+        console.warn(`[mock] ${method} ${path}`);
+      }
+      return mock as T;
+    }
+  }
+
   let response: Response;
   
   try {
@@ -87,6 +101,15 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
       headers
     });
   } catch (error) {
+    if (canMock) {
+      const mock = getMockResponse(path, options);
+      if (mock !== undefined) {
+        if (__DEV__) {
+          console.warn(`[mock] ${method} ${path} (network fallback)`);
+        }
+        return mock as T;
+      }
+    }
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("API Request Error:", {
       url,
