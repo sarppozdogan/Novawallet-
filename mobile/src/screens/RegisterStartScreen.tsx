@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { registerStart } from "../api/auth";
+import { PhoneField } from "../components/PhoneField";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { InfoBanner } from "../components/InfoBanner";
 import { GlassButton } from "../components/GlassButton";
@@ -16,7 +17,8 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
-import { isValidPhone, isValidTckn, sanitizeNumericInput, sanitizePhoneInput } from "../utils/validation";
+import { buildPhoneNumber, getMaxLocalLength, parsePhoneNumber, sanitizeLocalPhoneInput } from "../utils/countryCodes";
+import { isValidPhone, isValidTckn, sanitizeNumericInput } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "RegisterStart">;
@@ -25,22 +27,31 @@ export function RegisterStartScreen({ navigation, route }: Props) {
   const { t } = useI18n();
   const initialPhone = route.params?.phone ?? "";
   const initialTckn = route.params?.tckn ?? "";
-  const [phone, setPhone] = useState(initialPhone);
+  const [country, setCountry] = useState(() => parsePhoneNumber(initialPhone).country);
+  const [localNumber, setLocalNumber] = useState(() => parsePhoneNumber(initialPhone).local);
   const [tckn, setTckn] = useState(initialTckn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const canContinue = useMemo(() => isValidPhone(phone) && isValidTckn(tckn), [phone, tckn]);
+  useEffect(() => {
+    const parsed = parsePhoneNumber(initialPhone);
+    setCountry(parsed.country);
+    setLocalNumber(parsed.local);
+  }, [initialPhone]);
+
+  const maxLocalLength = getMaxLocalLength(country);
+  const fullPhone = buildPhoneNumber(country, localNumber);
+  const canContinue = useMemo(() => isValidPhone(fullPhone) && isValidTckn(tckn), [fullPhone, tckn]);
 
   const handleContinue = async () => {
     setLoading(true);
     setError(null);
     setInfo(null);
     try {
-      await registerStart(phone.trim());
+      await registerStart(fullPhone.trim());
       setInfo(t("auth.register_start_success"));
-      navigation.navigate("OtpVerify", { phone: phone.trim(), tckn: tckn.trim() });
+      navigation.navigate("OtpVerify", { phone: fullPhone.trim(), tckn: tckn.trim() });
     } catch (err) {
       setError(formatApiError(err, t("auth.register_start_failed")));
     } finally {
@@ -68,12 +79,14 @@ export function RegisterStartScreen({ navigation, route }: Props) {
             <StepIndicator labels={steps} currentIndex={0} />
 
             <GlassCard>
-              <GlassInput
+              <PhoneField
                 label={t("auth.phone_label")}
-                value={phone}
-                onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
-                keyboardType="phone-pad"
+                country={country}
+                onSelectCountry={setCountry}
+                value={localNumber}
+                onChangeText={(value) => setLocalNumber(sanitizeLocalPhoneInput(value, country))}
                 placeholder={t("auth.phone_placeholder")}
+                maxLength={maxLocalLength}
               />
               <GlassInput
                 label={t("auth.tckn_label")}
@@ -93,7 +106,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
                 title={t("auth.already_have_account")}
                 variant="ghost"
                 style={styles.secondaryButton}
-                onPress={() => navigation.navigate("Login", { phone })}
+                onPress={() => navigation.navigate("Login", { phone: fullPhone })}
               />
               {error ? <ErrorBanner message={error} /> : null}
               {info ? <InfoBanner message={info} /> : null}

@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { login, registerStart } from "../api/auth";
+import { PhoneField } from "../components/PhoneField";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { GlassButton } from "../components/GlassButton";
 import { GlassCard } from "../components/GlassCard";
@@ -14,7 +15,8 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
-import { isValidPassword, isValidPhone, sanitizePhoneInput } from "../utils/validation";
+import { buildPhoneNumber, getMaxLocalLength, parsePhoneNumber, sanitizeLocalPhoneInput } from "../utils/countryCodes";
+import { isValidPassword, isValidPhone } from "../utils/validation";
 import { createScaledStyles } from "../theme/scale";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login"> & {
@@ -24,20 +26,29 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login"> & {
 export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
   const { t } = useI18n();
   const initialPhone = route.params?.phone ?? "";
-  const [phone, setPhone] = useState(initialPhone);
+  const [country, setCountry] = useState(() => parsePhoneNumber(initialPhone).country);
+  const [localNumber, setLocalNumber] = useState(() => parsePhoneNumber(initialPhone).local);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
 
-  const canLogin = useMemo(() => isValidPhone(phone) && isValidPassword(password), [phone, password]);
+  useEffect(() => {
+    const parsed = parsePhoneNumber(initialPhone);
+    setCountry(parsed.country);
+    setLocalNumber(parsed.local);
+  }, [initialPhone]);
+
+  const maxLocalLength = getMaxLocalLength(country);
+  const fullPhone = buildPhoneNumber(country, localNumber);
+  const canLogin = useMemo(() => isValidPhone(fullPhone) && isValidPassword(password), [fullPhone, password]);
 
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
     setNeedsProfile(false);
     try {
-      const result = await login(phone.trim(), password.trim());
+      const result = await login(fullPhone.trim(), password.trim());
       if (result.isSuccess && result.token) {
         onAuthenticated(result.token);
         return;
@@ -45,8 +56,8 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
 
       if (result.requiresProfileCompletion) {
         setNeedsProfile(true);
-        await registerStart(phone.trim());
-        navigation.navigate("OtpVerify", { phone: phone.trim() });
+        await registerStart(fullPhone.trim());
+        navigation.navigate("OtpVerify", { phone: fullPhone.trim() });
         return;
       }
 
@@ -72,12 +83,14 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
             <Text style={styles.subtitle}>{t("auth.login.subtitle")}</Text>
 
             <GlassCard style={styles.card}>
-              <GlassInput
+              <PhoneField
                 label={t("auth.phone_label")}
-                value={phone}
-                onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
-                keyboardType="phone-pad"
+                country={country}
+                onSelectCountry={setCountry}
+                value={localNumber}
+                onChangeText={(value) => setLocalNumber(sanitizeLocalPhoneInput(value, country))}
                 placeholder={t("auth.phone_placeholder")}
+                maxLength={maxLocalLength}
               />
               <GlassInput
                 label={t("auth.password_label")}
@@ -91,7 +104,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
                 title={needsProfile ? t("auth.completing_profile") : t("auth.create_account")}
                 variant="ghost"
                 style={styles.secondaryButton}
-                onPress={() => navigation.navigate("RegisterStart", { phone })}
+                onPress={() => navigation.navigate("RegisterStart", { phone: fullPhone })}
                 disabled={loading}
               />
               {error ? <ErrorBanner message={error} /> : null}
