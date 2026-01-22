@@ -16,37 +16,30 @@ const isSimulator = Boolean(Constants.platform?.ios?.simulator) || (isIos && Con
 // iOS Simulator'de HER ZAMAN localhost kullan (Mac IP'si çalışmıyor)
 // Gerçek cihazda environment variable veya inferred host kullan
 const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5100";
-let defaultHost: string;
 
+// iOS Simulator için ZORUNLU localhost kullan
+let API_BASE_URL: string;
 if (isSimulator) {
-  // iOS Simulator: Her zaman localhost
-  defaultHost = "localhost";
+  // iOS Simulator: Environment variable'ı YOK SAY, her zaman localhost kullan
+  API_BASE_URL = `http://localhost:${fallbackPort}`;
 } else {
   // Gerçek cihaz: Environment variable > inferred host > localhost
-  defaultHost = process.env.EXPO_PUBLIC_API_HOST || inferredHost || "localhost";
+  const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  const defaultHost = process.env.EXPO_PUBLIC_API_HOST || inferredHost || "localhost";
+  const DEFAULT_BASE_URL = `http://${defaultHost}:${fallbackPort}`;
+  API_BASE_URL = envBaseUrl || DEFAULT_BASE_URL;
 }
-
-const DEFAULT_BASE_URL = `http://${defaultHost}:${fallbackPort}`;
-
-// Environment variable kontrolü - Simulator'de sadece localhost içeriyorsa kullan
-const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
-const isEnvLocalhost =
-  typeof envBaseUrl === "string" &&
-  (envBaseUrl.includes("localhost") || envBaseUrl.includes("127.0.0.1"));
-
-// Simulator'de sadece localhost içeren env variable kullan, gerçek cihazda her zaman kullan
-const useEnvBaseUrl = Boolean(envBaseUrl) && (!isSimulator || isEnvLocalhost);
-
-export const API_BASE_URL = useEnvBaseUrl && envBaseUrl ? envBaseUrl : DEFAULT_BASE_URL;
 
 // Debug: API Base URL'i console'a yazdır (sadece development'ta)
 if (__DEV__) {
   console.log("🔗 API Base URL:", API_BASE_URL);
-  console.log("🔗 Platform:", isSimulator ? "iOS Simulator" : "Device");
-  console.log("🔗 Environment Variable:", envBaseUrl || "not set");
-  console.log("🔗 Default URL:", DEFAULT_BASE_URL);
-  if (isSimulator && !isEnvLocalhost && envBaseUrl) {
-    console.warn("⚠️ iOS Simulator'da localhost dışı EXPO_PUBLIC_API_BASE_URL yok sayıldı. localhost kullanılıyor.");
+  console.log("🔗 Platform:", isSimulator ? "iOS Simulator (localhost zorunlu)" : "Device");
+  if (isSimulator) {
+    const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+    if (envBaseUrl && !envBaseUrl.includes("localhost") && !envBaseUrl.includes("127.0.0.1")) {
+      console.warn("⚠️ iOS Simulator'da EXPO_PUBLIC_API_BASE_URL yok sayıldı. localhost kullanılıyor.");
+      console.warn("   Environment Variable:", envBaseUrl);
+    }
   }
 }
 
