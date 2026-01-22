@@ -64,9 +64,17 @@ const store = {
       id: 7002,
       walletNumber: "NW-000002",
       virtualIban: "TR00 0000 0000 0000 0000 0000 02",
-      balance: 420.5,
+      balance: 890.2,
       currencyCode: "USD",
-      isActive: false
+      isActive: true
+    },
+    {
+      id: 7003,
+      walletNumber: "NW-000003",
+      virtualIban: "TR00 0000 0000 0000 0000 0000 03",
+      balance: 520.4,
+      currencyCode: "EUR",
+      isActive: true
     }
   ] as MockWallet[],
   transactions: [
@@ -113,6 +121,34 @@ const store = {
       isIncoming: false,
       bankAccountIban: "TR00 0000 0000 0000 0000 0000 99",
       description: "Withdraw"
+    },
+    {
+      walletId: 7002,
+      transactionId: "TX-9010",
+      transactionType: 1,
+      amount: 300,
+      feeAmount: 0,
+      netTransactionAmount: 300,
+      status: 1,
+      referenceCode: "RF-10010",
+      transactionDate: nowIso(240),
+      currencyCode: "USD",
+      isIncoming: true,
+      description: "Top up"
+    },
+    {
+      walletId: 7003,
+      transactionId: "TX-9020",
+      transactionType: 1,
+      amount: 180,
+      feeAmount: 0,
+      netTransactionAmount: 180,
+      status: 1,
+      referenceCode: "RF-10020",
+      transactionDate: nowIso(360),
+      currencyCode: "EUR",
+      isIncoming: true,
+      description: "Top up"
     }
   ] as MockTransaction[],
   cards: [
