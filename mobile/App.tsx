@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SplashScreen } from "./src/screens/SplashScreen";
-import { AuthScreen } from "./src/screens/AuthScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
+import { AuthNavigator } from "./src/navigation/AuthNavigator";
 import { clearToken, getToken, setToken } from "./src/storage/authStorage";
 import { delay } from "./src/utils/time";
 
@@ -39,8 +40,8 @@ export default function App() {
     };
   }, []);
 
-  const handleAuth = useCallback(async () => {
-    await setToken("demo-token");
+  const handleAuth = useCallback(async (token: string) => {
+    await setToken(token);
     setBootState({ checking: false, authed: true });
   }, []);
 
@@ -49,24 +50,37 @@ export default function App() {
     setBootState({ checking: false, authed: false });
   }, []);
 
+  const navTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: "#0B0F1F",
+      card: "#0B0F1F",
+      text: "#F6F7FB",
+      border: "transparent"
+    }
+  };
+
   if (bootState.checking) {
     return <SplashScreen />;
   }
 
   return (
-    <NavigationContainer>
-      <StatusBar style="light" />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {bootState.authed ? (
-          <Stack.Screen name="Home">
-            {() => <HomeScreen onSignOut={handleSignOut} />}
-          </Stack.Screen>
-        ) : (
-          <Stack.Screen name="Auth">
-            {() => <AuthScreen onAuthenticated={handleAuth} />}
-          </Stack.Screen>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer theme={navTheme}>
+        <StatusBar style="light" />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {bootState.authed ? (
+            <Stack.Screen name="Home">
+              {() => <HomeScreen onSignOut={handleSignOut} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Auth">
+              {() => <AuthNavigator onAuthenticated={handleAuth} />}
+            </Stack.Screen>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
