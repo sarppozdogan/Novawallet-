@@ -61,6 +61,27 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
               style={styles.actionButton}
             />
             <GlassButton
+              title="Withdraw"
+              variant="ghost"
+              onPress={() => navigation.navigate("Withdraw", {})}
+              style={styles.actionButton}
+            />
+          </View>
+          <View style={styles.actionsRow}>
+            <GlassButton
+              title="Send"
+              onPress={() => navigation.navigate("P2P", {})}
+              style={styles.actionButton}
+            />
+            <GlassButton
+              title="Bank accounts"
+              variant="ghost"
+              onPress={() => navigation.navigate("BankAccounts")}
+              style={styles.actionButton}
+            />
+          </View>
+          <View style={styles.actionsRow}>
+            <GlassButton
               title="Refresh"
               variant="ghost"
               onPress={loadWallets}
@@ -152,7 +173,7 @@ const styles = StyleSheet.create({
     minWidth: 90
   },
   actionsRow: {
-    marginTop: 20,
+    marginTop: 12,
     flexDirection: "row",
     gap: 12
   },

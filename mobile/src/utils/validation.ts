@@ -14,6 +14,18 @@ export function sanitizeAmountInput(value: string): string {
   return fraction ? `${integer}.${fraction}` : integer;
 }
 
+export function sanitizeIbanInput(value: string): string {
+  return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 34);
+}
+
+export function isValidIban(value: string): boolean {
+  const cleaned = sanitizeIbanInput(value);
+  return cleaned.length >= 15 && cleaned.length <= 34;
+}
+
+export function sanitizeWalletNumberInput(value: string): string {
+  return value.replace(/\s+/g, "").toUpperCase();
+}
 export function sanitizePhoneInput(value: string): string {
   const cleaned = value.replace(/[^\d+]/g, "");
   if (cleaned.startsWith("+")) {

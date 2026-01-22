@@ -39,6 +39,22 @@ export type TopUpRequest = {
   description?: string | null;
 };
 
+export type WithdrawRequest = {
+  walletId: number;
+  amount: number;
+  bankAccountId: number;
+  currencyCode: string;
+  description?: string | null;
+};
+
+export type P2PRequest = {
+  senderWalletId: number;
+  receiverWalletNumber: string;
+  amount: number;
+  currencyCode: string;
+  description?: string | null;
+};
+
 export type TransactionResult = {
   transactionId: string;
   referenceCode: string;
@@ -55,6 +71,20 @@ export async function getTransactionById(transactionId: string): Promise<Transac
 
 export async function topUp(payload: TopUpRequest): Promise<TransactionResult> {
   return apiRequestWithAuth<TransactionResult>("/api/transactions/topup", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function withdraw(payload: WithdrawRequest): Promise<TransactionResult> {
+  return apiRequestWithAuth<TransactionResult>("/api/transactions/withdraw", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function p2pTransfer(payload: P2PRequest): Promise<TransactionResult> {
+  return apiRequestWithAuth<TransactionResult>("/api/transactions/p2p", {
     method: "POST",
     body: JSON.stringify(payload)
   });

@@ -7,6 +7,13 @@ import { TransactionsScreen } from "../screens/TransactionsScreen";
 import { TransactionDetailScreen } from "../screens/TransactionDetailScreen";
 import { TopUpScreen } from "../screens/TopUpScreen";
 import { TopUpResultScreen } from "../screens/TopUpResultScreen";
+import { WithdrawScreen } from "../screens/WithdrawScreen";
+import { WithdrawResultScreen } from "../screens/WithdrawResultScreen";
+import { P2PScreen } from "../screens/P2PScreen";
+import { P2PResultScreen } from "../screens/P2PResultScreen";
+import { BankAccountsScreen } from "../screens/BankAccountsScreen";
+import { BankAccountDetailScreen } from "../screens/BankAccountDetailScreen";
+import { BankAccountCreateScreen } from "../screens/BankAccountCreateScreen";
 
 type MainNavigatorProps = {
   onSignOut: () => void;
@@ -25,6 +32,13 @@ export function MainNavigator({ onSignOut }: MainNavigatorProps) {
       <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
       <Stack.Screen name="TopUp" component={TopUpScreen} />
       <Stack.Screen name="TopUpResult" component={TopUpResultScreen} />
+      <Stack.Screen name="Withdraw" component={WithdrawScreen} />
+      <Stack.Screen name="WithdrawResult" component={WithdrawResultScreen} />
+      <Stack.Screen name="P2P" component={P2PScreen} />
+      <Stack.Screen name="P2PResult" component={P2PResultScreen} />
+      <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
+      <Stack.Screen name="BankAccountDetail" component={BankAccountDetailScreen} />
+      <Stack.Screen name="BankAccountCreate" component={BankAccountCreateScreen} />
     </Stack.Navigator>
   );
 }

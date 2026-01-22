@@ -80,6 +80,19 @@ export function WalletDetailScreen({ navigation, route }: Props) {
                   style={styles.actionButton}
                 />
                 <GlassButton
+                  title="Withdraw"
+                  variant="ghost"
+                  onPress={() => navigation.navigate("Withdraw", { walletId: wallet.id })}
+                  style={styles.actionButton}
+                />
+              </View>
+              <View style={styles.actions}>
+                <GlassButton
+                  title="Send"
+                  onPress={() => navigation.navigate("P2P", { walletId: wallet.id })}
+                  style={styles.actionButton}
+                />
+                <GlassButton
                   title="Transactions"
                   variant="ghost"
                   onPress={() =>

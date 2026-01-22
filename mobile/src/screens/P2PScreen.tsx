@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getBankAccounts, BankAccountSummary } from "../api/bankAccounts";
-import { topUp } from "../api/transactions";
+import { p2pTransfer } from "../api/transactions";
 import { getWallets, WalletSummary } from "../api/wallets";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { GlassButton } from "../components/GlassButton";
@@ -15,16 +14,15 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
-import { sanitizeAmountInput } from "../utils/validation";
+import { sanitizeAmountInput, sanitizeWalletNumberInput } from "../utils/validation";
 
-type Props = NativeStackScreenProps<MainStackParamList, "TopUp">;
+type Props = NativeStackScreenProps<MainStackParamList, "P2P">;
 
-export function TopUpScreen({ navigation, route }: Props) {
+export function P2PScreen({ navigation, route }: Props) {
   const initialWalletId = route.params?.walletId;
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
-  const [bankAccounts, setBankAccounts] = useState<BankAccountSummary[]>([]);
   const [selectedWalletId, setSelectedWalletId] = useState<number | null>(initialWalletId ?? null);
-  const [selectedBankAccountId, setSelectedBankAccountId] = useState<number | null>(null);
+  const [receiverWalletNumber, setReceiverWalletNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
@@ -33,22 +31,21 @@ export function TopUpScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     let mounted = true;
-    const loadData = async () => {
+    const loadWallets = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [walletData, bankData] = await Promise.all([getWallets(), getBankAccounts(false)]);
+        const data = await getWallets();
         if (!mounted) {
           return;
         }
-        setWallets(walletData);
-        setBankAccounts(bankData.filter((item) => item.isActive));
-        if (!selectedWalletId && walletData.length > 0) {
-          setSelectedWalletId(walletData[0].id);
+        setWallets(data);
+        if (!selectedWalletId && data.length > 0) {
+          setSelectedWalletId(data[0].id);
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load top up data."));
+          setError(formatApiError(err, "Unable to load wallets."));
         }
       } finally {
         if (mounted) {
@@ -57,7 +54,7 @@ export function TopUpScreen({ navigation, route }: Props) {
       }
     };
 
-    loadData();
+    loadWallets();
     return () => {
       mounted = false;
     };
@@ -66,32 +63,37 @@ export function TopUpScreen({ navigation, route }: Props) {
   const selectedWallet = wallets.find((wallet) => wallet.id === selectedWalletId) || null;
   const amountValue = Number(amount);
   const canSubmit = useMemo(() => {
-    return !!selectedWallet && !!selectedBankAccountId && amountValue > 0 && !Number.isNaN(amountValue);
-  }, [selectedWallet, selectedBankAccountId, amountValue]);
+    return (
+      !!selectedWallet &&
+      receiverWalletNumber.trim().length > 5 &&
+      amountValue > 0 &&
+      !Number.isNaN(amountValue)
+    );
+  }, [selectedWallet, receiverWalletNumber, amountValue]);
 
   const handleSubmit = async () => {
-    if (!selectedWallet || !selectedBankAccountId) {
+    if (!selectedWallet) {
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      const result = await topUp({
-        walletId: selectedWallet.id,
+      const result = await p2pTransfer({
+        senderWalletId: selectedWallet.id,
+        receiverWalletNumber: receiverWalletNumber.trim(),
         amount: amountValue,
-        bankAccountId: selectedBankAccountId,
         currencyCode: selectedWallet.currencyCode,
         description: description.trim() || null
       });
 
-      navigation.navigate("TopUpResult", {
+      navigation.navigate("P2PResult", {
         transactionId: result.transactionId,
         referenceCode: result.referenceCode,
         status: result.status,
         walletId: selectedWallet.id
       });
     } catch (err) {
-      setError(formatApiError(err, "Unable to complete top up."));
+      setError(formatApiError(err, "Unable to complete transfer."));
     } finally {
       setSubmitting(false);
     }
@@ -104,13 +106,13 @@ export function TopUpScreen({ navigation, route }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} style={styles.back} />
 
-            <Text style={styles.kicker}>Top up</Text>
-            <Text style={styles.title}>Move money into your wallet</Text>
+            <Text style={styles.kicker}>P2P transfer</Text>
+            <Text style={styles.title}>Send money instantly</Text>
 
             {error ? <ErrorBanner message={error} /> : null}
 
             <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Select wallet</Text>
+              <Text style={styles.sectionTitle}>Sender wallet</Text>
               <View style={styles.selectorList}>
                 {wallets.map((wallet) => {
                   const active = wallet.id === selectedWalletId;
@@ -134,6 +136,17 @@ export function TopUpScreen({ navigation, route }: Props) {
             </GlassCard>
 
             <GlassCard style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Receiver</Text>
+              <GlassInput
+                label="Receiver wallet number"
+                value={receiverWalletNumber}
+                onChangeText={(value) => setReceiverWalletNumber(sanitizeWalletNumberInput(value))}
+                placeholder="Wallet number"
+                autoCapitalize="characters"
+              />
+            </GlassCard>
+
+            <GlassCard style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Amount</Text>
               <GlassInput
                 label={`Amount (${selectedWallet?.currencyCode ?? "TRY"})`}
@@ -146,42 +159,13 @@ export function TopUpScreen({ navigation, route }: Props) {
                 label="Description (optional)"
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Top up" 
+                placeholder="P2P transfer"
                 maxLength={140}
               />
             </GlassCard>
 
-            <GlassCard style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Bank account</Text>
-              <View style={styles.selectorList}>
-                {bankAccounts.map((account) => {
-                  const active = account.id === selectedBankAccountId;
-                  return (
-                    <Pressable
-                      key={account.id}
-                      onPress={() => setSelectedBankAccountId(account.id)}
-                      style={[styles.selectorItem, active && styles.selectorItemActive]}
-                    >
-                      <Text style={[styles.selectorTitle, active && styles.selectorTitleActive]}>{account.bankName}</Text>
-                      <Text style={styles.selectorMeta}>{account.iban}</Text>
-                      <Text style={styles.selectorMeta}>{account.accountHolderName}</Text>
-                    </Pressable>
-                  );
-                })}
-                {!loading && bankAccounts.length === 0 ? (
-                  <Text style={styles.emptyInline}>No bank accounts found.</Text>
-                ) : null}
-              </View>
-              <GlassButton
-                title="Manage bank accounts"
-                variant="ghost"
-                style={styles.manageButton}
-                onPress={() => navigation.navigate("BankAccounts")}
-              />
-            </GlassCard>
-
             <GlassButton
-              title={submitting ? "Processing" : "Confirm top up"}
+              title={submitting ? "Processing" : "Send transfer"}
               onPress={handleSubmit}
               loading={submitting}
               disabled={!canSubmit || submitting}
@@ -266,9 +250,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
     color: colors.textSecondary
-  },
-  manageButton: {
-    marginTop: 12
   },
   submit: {
     marginTop: 18
