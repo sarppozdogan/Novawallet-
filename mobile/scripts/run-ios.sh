@@ -85,7 +85,11 @@ fi
 
 # API Base URL'i ayarla
 export EXPO_PUBLIC_API_BASE_URL="http://${MAC_IP}:${API_PORT}"
+export EXPO_PUBLIC_API_PORT="${API_PORT}"
+export EXPO_PUBLIC_API_HOST="${MAC_IP}"
 echo -e "${GREEN}✓ API Base URL: ${EXPO_PUBLIC_API_BASE_URL}${NC}"
+echo -e "${GREEN}✓ API Port: ${API_PORT}${NC}"
+echo -e "${GREEN}✓ API Host: ${MAC_IP}${NC}"
 
 # Mobile dizinine git
 cd "$(dirname "$0")/.."

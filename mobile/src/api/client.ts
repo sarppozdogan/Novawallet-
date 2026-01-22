@@ -11,10 +11,12 @@ const hostUri =
 const inferredHost = hostUri ? hostUri.split(":")[0] : "";
 const isIos = Platform.OS === "ios";
 const isSimulator = Boolean(Constants.platform?.ios?.simulator) || (isIos && Constants.isDevice === false);
-const defaultHost = isSimulator ? "localhost" : inferredHost;
-const fallbackHost = process.env.EXPO_PUBLIC_API_HOST || defaultHost || "localhost";
+
+// iOS Simulator'de environment variable'dan IP al, yoksa localhost kullan
+// Environment variable script tarafından Mac IP'si ile set edilir
+const defaultHost = process.env.EXPO_PUBLIC_API_HOST || (isSimulator ? "localhost" : inferredHost) || "localhost";
 const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5100";
-const DEFAULT_BASE_URL = `http://${fallbackHost}:${fallbackPort}`;
+const DEFAULT_BASE_URL = `http://${defaultHost}:${fallbackPort}`;
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_BASE_URL;
 
