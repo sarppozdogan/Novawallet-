@@ -10,6 +10,11 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# API portu (macOS'ta 5000 portu sistem tarafından kullanılabildiği için 5100 varsayılan)
+API_PORT="${NOVA_API_PORT:-5100}"
+API_URL="${NOVA_API_URL:-http://0.0.0.0:${API_PORT}}"
+DISPLAY_URL="http://localhost:${API_PORT}"
+
 echo -e "${GREEN}🚀 NovaWallet Backend Başlatılıyor...${NC}"
 
 # Proje root dizinine git
@@ -46,7 +51,7 @@ echo -e "${YELLOW}  NOVA_DB_CONNECTION=\"Server=localhost,1433;Database=NovaWall
 echo -e "${YELLOW}    dotnet ef database update --project src/NovaWallet.Infrastructure --startup-project src/NovaWallet.API${NC}"
 
 # Backend'i başlat (0.0.0.0 tüm network interface'lerinde dinler)
-echo -e "${GREEN}🎯 Backend API başlatılıyor (http://0.0.0.0:5000)...${NC}"
-echo -e "${YELLOW}💡 Backend'e erişim: http://localhost:5000 veya http://$(ipconfig getifaddr en0 2>/dev/null || echo 'YOUR_IP'):5000${NC}"
+echo -e "${GREEN}🎯 Backend API başlatılıyor (${DISPLAY_URL})...${NC}"
+echo -e "${YELLOW}💡 Backend'e erişim: ${DISPLAY_URL} veya http://$(ipconfig getifaddr en0 2>/dev/null || echo 'YOUR_IP'):${API_PORT}${NC}"
 cd src/NovaWallet.API
-dotnet run --urls http://0.0.0.0:5000
+dotnet run --urls "${API_URL}"

@@ -42,5 +42,5 @@ npx expo start --ios
 - **Çözüm:** `y` yazıp Enter'a basın (ilk kez çalıştırıyorsanız)
 
 ### Backend'e Bağlanamıyor
-- Backend'in `http://localhost:5000` adresinde çalıştığından emin olun
+- Backend'in `http://localhost:5100` adresinde çalıştığından emin olun
 - Mac IP adresini kontrol edin: `ipconfig getifaddr en0`

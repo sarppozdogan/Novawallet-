@@ -9,7 +9,7 @@ const hostUri =
 
 const inferredHost = hostUri ? hostUri.split(":")[0] : "";
 const fallbackHost = process.env.EXPO_PUBLIC_API_HOST || inferredHost || "localhost";
-const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5000";
+const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5100";
 const DEFAULT_BASE_URL = `http://${fallbackHost}:${fallbackPort}`;
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_BASE_URL;

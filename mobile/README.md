@@ -40,7 +40,7 @@ Script otomatik olarak:
 
 ```bash
 # Mac IP adresini al
-export EXPO_PUBLIC_API_BASE_URL="http://$(ipconfig getifaddr en0):5000"
+export EXPO_PUBLIC_API_BASE_URL="http://$(ipconfig getifaddr en0):5100"
 
 # Expo'yu başlat
 npx expo start --ios
@@ -50,7 +50,9 @@ npx expo start --ios
 
 iOS Simulator'de backend'e bağlanmak için Mac'in IP adresi kullanılır. Script otomatik olarak bunu yapar.
 
-Backend'in `http://localhost:5000` adresinde çalıştığından emin olun.
+Backend'in `http://localhost:5100` adresinde çalıştığından emin olun.
+macOS'ta 5000 portu sistem servisleri tarafından kullanılabildiği için 5100 önerilir.
+Farklı bir port kullanıyorsanız `EXPO_PUBLIC_API_BASE_URL` veya `EXPO_PUBLIC_API_PORT` ayarlayın.
 
 ## Sorun Giderme
 
@@ -58,7 +60,7 @@ Backend'in `http://localhost:5000` adresinde çalıştığından emin olun.
 
 1. Backend'in çalıştığından emin olun:
    ```bash
-   curl http://localhost:5000/swagger
+   curl http://localhost:5100/swagger
    ```
 
 2. Mac IP adresini kontrol edin:
@@ -66,7 +68,7 @@ Backend'in `http://localhost:5000` adresinde çalıştığından emin olun.
    ipconfig getifaddr en0
    ```
 
-3. Firewall ayarlarını kontrol edin (5000 portu açık olmalı)
+3. Firewall ayarlarını kontrol edin (5100 portu açık olmalı)
 
 ### Simulator Bulunamıyor
 

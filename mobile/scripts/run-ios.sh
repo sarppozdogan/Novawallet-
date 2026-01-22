@@ -11,6 +11,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# API portu (macOS'ta 5000 portu sistem tarafından kullanılabildiği için 5100 varsayılan)
+API_PORT="${NOVA_API_PORT:-5100}"
+
 echo -e "${GREEN}🚀 NovaWallet iOS Simulator Başlatılıyor...${NC}"
 
 # Mac IP adresini al (en0 veya en1 interface'inden)
@@ -71,17 +74,17 @@ fi
 
 # Backend'in çalışıp çalışmadığını kontrol et
 echo -e "${YELLOW}🔍 Backend kontrol ediliyor...${NC}"
-if curl -s http://localhost:5000/swagger > /dev/null 2>&1 || curl -s http://localhost:5000/api > /dev/null 2>&1; then
-  echo -e "${GREEN}✓ Backend çalışıyor (localhost:5000)${NC}"
+if curl -s "http://localhost:${API_PORT}/swagger" > /dev/null 2>&1 || curl -s "http://localhost:${API_PORT}/api" > /dev/null 2>&1; then
+  echo -e "${GREEN}✓ Backend çalışıyor (localhost:${API_PORT})${NC}"
 else
   echo -e "${RED}⚠ Backend çalışmıyor görünüyor. Lütfen backend'i başlatın:${NC}"
-  echo -e "${YELLOW}  cd ../.. && dotnet run --project src/NovaWallet.API --urls http://localhost:5000${NC}"
+  echo -e "${YELLOW}  cd ../.. && dotnet run --project src/NovaWallet.API --urls http://0.0.0.0:${API_PORT}${NC}"
   echo -e "${YELLOW}Devam etmek için Enter'a basın veya Ctrl+C ile iptal edin...${NC}"
   read
 fi
 
 # API Base URL'i ayarla
-export EXPO_PUBLIC_API_BASE_URL="http://${MAC_IP}:5000"
+export EXPO_PUBLIC_API_BASE_URL="http://${MAC_IP}:${API_PORT}"
 echo -e "${GREEN}✓ API Base URL: ${EXPO_PUBLIC_API_BASE_URL}${NC}"
 
 # Mobile dizinine git

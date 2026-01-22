@@ -81,7 +81,7 @@ NOVA_DB_CONNECTION="Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Passw
 5) Run API
 
 ```bash
-dotnet run --project src/NovaWallet.API
+dotnet run --project src/NovaWallet.API --urls http://0.0.0.0:5100
 ```
 
 Notes
@@ -99,13 +99,14 @@ docker compose up -d apisix etcd
 2) Start API (HTTP)
 
 ```bash
-dotnet run --project src/NovaWallet.API --urls http://localhost:5000
+dotnet run --project src/NovaWallet.API --urls http://0.0.0.0:5100
 ```
 
 3) Configure APISIX routes and JWT validation
 
 ```bash
 APISIX_ADMIN_KEY=CHANGE_ME_APISIX_ADMIN_KEY \
+UPSTREAM_PORT=5100 \
 JWT_SECRET=CHANGE_ME_32_CHAR_SECRET_KEY_123456 \
 JWT_KEY=novawallet \
 ./apisix/scripts/bootstrap.sh
