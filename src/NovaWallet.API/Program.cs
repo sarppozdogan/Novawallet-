@@ -11,6 +11,18 @@ using NovaWallet.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS yapılandırması - Development için tüm origin'lere izin ver
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -79,13 +91,20 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseForwardedHeaders();
 
+// CORS'u authentication'dan önce ekle
 if (app.Environment.IsDevelopment())
 {
+    app.UseCors("AllowAll");
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Development'ta HTTPS redirection'ı devre dışı bırak (HTTP üzerinden çalışıyoruz)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

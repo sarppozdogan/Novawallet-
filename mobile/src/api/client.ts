@@ -14,6 +14,13 @@ const DEFAULT_BASE_URL = `http://${fallbackHost}:${fallbackPort}`;
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_BASE_URL;
 
+// Debug: API Base URL'i console'a yazdır (sadece development'ta)
+if (__DEV__) {
+  console.log("🔗 API Base URL:", API_BASE_URL);
+  console.log("🔗 Environment Variable:", process.env.EXPO_PUBLIC_API_BASE_URL || "not set");
+  console.log("🔗 Default URL:", DEFAULT_BASE_URL);
+}
+
 type ApiErrorPayload = {
   errorCode?: string;
   message?: string;
@@ -48,15 +55,24 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
     "Content-Type": "application/json",
     ...(options?.headers || {})
   };
+  
+  const url = `${API_BASE_URL}${path}`;
   let response: Response;
+  
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(url, {
       ...options,
       headers
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("API Request Error:", {
+      url,
+      error: errorMessage,
+      baseUrl: API_BASE_URL
+    });
     throw new ApiError(
-      `API sunucusuna ulaşılamadı (${API_BASE_URL}). Lütfen ağ bağlantısını ve API adresini kontrol edin.`
+      `API sunucusuna ulaşılamadı (${API_BASE_URL}). Lütfen ağ bağlantısını ve API adresini kontrol edin. Hata: ${errorMessage}`
     );
   }
 
@@ -64,7 +80,14 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
 
   if (!response.ok) {
     const payload = (data || {}) as ApiErrorPayload;
-    throw new ApiError(payload.message || "Request failed.", payload.errorCode);
+    const errorMessage = payload.message || `Request failed with status ${response.status}`;
+    console.error("API Response Error:", {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      payload
+    });
+    throw new ApiError(errorMessage, payload.errorCode);
   }
 
   return data as T;
