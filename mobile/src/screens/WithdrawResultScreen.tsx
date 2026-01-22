@@ -9,6 +9,7 @@ import { MainStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { getTransactionStatusLabel } from "../utils/formatters";
+import { createScaledStyles } from "../theme/scale";
 
 type Props = NativeStackScreenProps<MainStackParamList, "WithdrawResult">;
 
@@ -57,7 +58,7 @@ export function WithdrawResultScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   safe: {
     flex: 1
   },

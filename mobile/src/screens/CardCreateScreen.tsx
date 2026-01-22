@@ -13,6 +13,8 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidCardNumber, sanitizeCardNumberInput, sanitizeNumericInput } from "../utils/validation";
+import { createScaledStyles } from "../theme/scale";
+import { BackButton } from "../components/BackButton";
 
 type Props = NativeStackScreenProps<MainStackParamList, "CardCreate">;
 
@@ -57,7 +59,7 @@ export function CardCreateScreen({ navigation }: Props) {
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.container}>
-            <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} />
+            <BackButton onPress={() => navigation.goBack()} />
 
             <Text style={styles.kicker}>Add card</Text>
             <Text style={styles.title}>Secure card capture</Text>
@@ -110,7 +112,7 @@ export function CardCreateScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

@@ -14,6 +14,7 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import {
+import { createScaledStyles } from "../theme/scale";
   isValidCurrencyCode,
   isValidPassword,
   isValidTaxNumber,
@@ -202,7 +203,7 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

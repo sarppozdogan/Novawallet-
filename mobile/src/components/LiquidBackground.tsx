@@ -2,6 +2,7 @@ import React, { ReactNode, useEffect, useMemo, useRef } from "react";
 import { Animated, StyleSheet, View, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../theme/colors";
+import { createScaledStyles } from "../theme/scale";
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -132,7 +133,7 @@ export function LiquidBackground({ children }: LiquidBackgroundProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   container: {
     flex: 1
   },

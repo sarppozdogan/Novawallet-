@@ -13,6 +13,7 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidPassword, isValidPhone, sanitizePhoneInput } from "../utils/validation";
+import { createScaledStyles } from "../theme/scale";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login"> & {
   onAuthenticated: (token: string) => void;
@@ -100,7 +101,7 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

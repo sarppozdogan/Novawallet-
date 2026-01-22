@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { createScaledStyles } from "../theme/scale";
 
 export function ErrorBanner({ message }: { message: string }) {
   return (
@@ -11,7 +12,7 @@ export function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   container: {
     borderRadius: 14,
     borderWidth: 1,

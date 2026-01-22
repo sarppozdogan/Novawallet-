@@ -13,6 +13,7 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
+import { createScaledStyles } from "../theme/scale";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Wallets"> & {
   onSignOut: () => void;
@@ -147,7 +148,7 @@ export function WalletsScreen({ navigation, onSignOut }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   safe: {
     flex: 1
   },

@@ -5,6 +5,7 @@ import { LiquidBackground } from "../components/LiquidBackground";
 import { GlassCard } from "../components/GlassCard";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { createScaledStyles } from "../theme/scale";
 
 export function SplashScreen() {
   const shimmer = useRef(new Animated.Value(0)).current;
@@ -52,7 +53,7 @@ export function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   safe: {
     flex: 1
   },

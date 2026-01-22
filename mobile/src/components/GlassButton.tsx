@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleProp, StyleSheet, Text, ViewStyle } 
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { createScaledStyles } from "../theme/scale";
 
 type GlassButtonProps = {
   title: string;
@@ -43,7 +44,7 @@ export function GlassButton({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   primary: {
     borderRadius: 16,
     paddingVertical: 14,

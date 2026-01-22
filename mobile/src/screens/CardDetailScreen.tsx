@@ -12,6 +12,8 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { formatDate } from "../utils/formatters";
+import { createScaledStyles } from "../theme/scale";
+import { BackButton } from "../components/BackButton";
 
 type Props = NativeStackScreenProps<MainStackParamList, "CardDetail">;
 
@@ -69,7 +71,7 @@ export function CardDetailScreen({ navigation, route }: Props) {
     <LiquidBackground>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.container}>
-          <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} style={styles.back} />
+          <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
           <Text style={styles.kicker}>Card</Text>
           <Text style={styles.title}>Card details</Text>
@@ -127,7 +129,7 @@ export function CardDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   safe: {
     flex: 1
   },

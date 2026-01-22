@@ -3,6 +3,7 @@ import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../theme/colors";
+import { createScaledStyles } from "../theme/scale";
 
 type GlassCardProps = {
   children?: ReactNode;
@@ -22,7 +23,7 @@ export function GlassCard({ children, style }: GlassCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   container: {
     borderRadius: 24,
     overflow: "hidden",

@@ -15,6 +15,7 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidOtp, sanitizeNumericInput } from "../utils/validation";
+import { createScaledStyles } from "../theme/scale";
 
 const steps = ["Phone", "OTP", "Profile"];
 
@@ -113,7 +114,7 @@ export function OtpVerifyScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

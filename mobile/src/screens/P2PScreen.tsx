@@ -15,6 +15,8 @@ import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
 import { sanitizeAmountInput, sanitizeWalletNumberInput } from "../utils/validation";
+import { createScaledStyles } from "../theme/scale";
+import { BackButton } from "../components/BackButton";
 
 type Props = NativeStackScreenProps<MainStackParamList, "P2P">;
 
@@ -104,7 +106,7 @@ export function P2PScreen({ navigation, route }: Props) {
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.container}>
-            <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} style={styles.back} />
+            <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
             <Text style={styles.kicker}>P2P transfer</Text>
             <Text style={styles.title}>Send money instantly</Text>
@@ -178,7 +180,7 @@ export function P2PScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

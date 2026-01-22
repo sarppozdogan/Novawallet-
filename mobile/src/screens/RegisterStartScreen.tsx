@@ -15,6 +15,7 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidPhone, isValidTckn, sanitizeNumericInput, sanitizePhoneInput } from "../utils/validation";
+import { createScaledStyles } from "../theme/scale";
 
 const steps = ["Phone", "OTP", "Profile"];
 
@@ -103,7 +104,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

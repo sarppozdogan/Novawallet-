@@ -13,6 +13,8 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { isValidIban, sanitizeIbanInput } from "../utils/validation";
+import { createScaledStyles } from "../theme/scale";
+import { BackButton } from "../components/BackButton";
 
 type Props = NativeStackScreenProps<MainStackParamList, "BankAccountCreate">;
 
@@ -49,7 +51,7 @@ export function BankAccountCreateScreen({ navigation }: Props) {
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.container}>
-            <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} />
+            <BackButton onPress={() => navigation.goBack()} />
 
             <Text style={styles.kicker}>Add account</Text>
             <Text style={styles.title}>Link your bank</Text>
@@ -93,7 +95,7 @@ export function BankAccountCreateScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   flex: {
     flex: 1
   },

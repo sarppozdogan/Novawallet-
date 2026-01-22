@@ -12,6 +12,8 @@ import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
 import { formatAmount, formatDate, getTransactionStatusLabel, getTransactionTypeLabel } from "../utils/formatters";
+import { createScaledStyles } from "../theme/scale";
+import { BackButton } from "../components/BackButton";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Transactions">;
 
@@ -52,7 +54,7 @@ export function TransactionsScreen({ navigation, route }: Props) {
     <LiquidBackground>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.container}>
-          <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} style={styles.back} />
+          <BackButton onPress={() => navigation.goBack()} style={styles.back} />
 
           <Text style={styles.kicker}>Transactions</Text>
           <Text style={styles.title}>Wallet #{walletNumber}</Text>
@@ -109,7 +111,7 @@ export function TransactionsScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   safe: {
     flex: 1
   },

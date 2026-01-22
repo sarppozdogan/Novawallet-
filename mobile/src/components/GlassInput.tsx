@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { createScaledStyles } from "../theme/scale";
 
 type GlassInputProps = TextInputProps & {
   label: string;
@@ -20,7 +21,7 @@ export function GlassInput({ label, style, ...props }: GlassInputProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createScaledStyles({
   group: {
     marginBottom: 16
   },
