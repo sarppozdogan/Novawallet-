@@ -88,7 +88,7 @@ export function OtpVerifyScreen({ navigation, route }: Props) {
                 placeholder="000000"
                 maxLength={6}
               />
-              <GlassButton title="Verify" onPress={handleVerify} loading={loading} disabled={!canContinue} />
+              <GlassButton title="Verify" onPress={handleVerify} loading={loading} disabled={!canContinue || loading} />
               <GlassButton
                 title="Edit phone"
                 variant="ghost"

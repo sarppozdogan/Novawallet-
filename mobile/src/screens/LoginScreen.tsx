@@ -41,7 +41,8 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
 
       if (result.requiresProfileCompletion) {
         setNeedsProfile(true);
-        setError("Your profile is incomplete. Continue registration to activate your wallet.");
+        await registerStart(phone.trim());
+        navigation.navigate("OtpVerify", { phone: phone.trim() });
         return;
       }
 
@@ -53,18 +54,6 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
     }
   };
 
-  const handleContinueRegistration = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await registerStart(phone.trim());
-      navigation.navigate("OtpVerify", { phone: phone.trim() });
-    } catch (err) {
-      setError(formatApiError(err, "Unable to continue registration."));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <LiquidBackground>
@@ -90,23 +79,14 @@ export function LoginScreen({ navigation, route, onAuthenticated }: Props) {
                 secureTextEntry
                 placeholder="Enter your password"
               />
-              <GlassButton title="Sign in" onPress={handleLogin} loading={loading} disabled={!canLogin} />
-              {needsProfile ? (
-                <GlassButton
-                  title="Continue registration"
-                  variant="ghost"
-                  style={styles.secondaryButton}
-                  onPress={handleContinueRegistration}
-                  loading={loading}
-                />
-              ) : (
-                <GlassButton
-                  title="Create account"
-                  variant="ghost"
-                  style={styles.secondaryButton}
-                  onPress={() => navigation.navigate("RegisterStart", { phone })}
-                />
-              )}
+              <GlassButton title="Sign in" onPress={handleLogin} loading={loading} disabled={!canLogin || loading} />
+              <GlassButton
+                title={needsProfile ? "Completing profile" : "Create account"}
+                variant="ghost"
+                style={styles.secondaryButton}
+                onPress={() => navigation.navigate("RegisterStart", { phone })}
+                disabled={loading}
+              />
               {error ? <ErrorBanner message={error} /> : null}
             </GlassCard>
 

@@ -70,7 +70,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
                 title="Send OTP"
                 onPress={handleContinue}
                 loading={loading}
-                disabled={!canContinue}
+                disabled={!canContinue || loading}
               />
               <GlassButton
                 title="I already have an account"

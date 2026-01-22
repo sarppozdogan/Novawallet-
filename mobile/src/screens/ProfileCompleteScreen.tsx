@@ -186,7 +186,12 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
                 maxLength={3}
               />
 
-              <GlassButton title="Complete profile" onPress={handleSubmit} loading={loading} disabled={!canSubmit} />
+              <GlassButton
+                title="Complete profile"
+                onPress={handleSubmit}
+                loading={loading}
+                disabled={!canSubmit || loading}
+              />
               {localError ? <ErrorBanner message={localError} /> : null}
               {error ? <ErrorBanner message={error} /> : null}
             </GlassCard>

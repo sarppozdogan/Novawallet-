@@ -1,3 +1,5 @@
+import { getToken } from "../storage/authStorage";
+
 const DEFAULT_BASE_URL = "http://localhost:5000";
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_BASE_URL;
@@ -50,4 +52,14 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
   }
 
   return data as T;
+}
+
+export async function apiRequestWithAuth<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = await getToken();
+  const headers = {
+    ...(options?.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+
+  return apiRequest<T>(path, { ...options, headers });
 }

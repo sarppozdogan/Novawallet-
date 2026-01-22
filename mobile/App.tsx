@@ -4,8 +4,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SplashScreen } from "./src/screens/SplashScreen";
-import { HomeScreen } from "./src/screens/HomeScreen";
 import { AuthNavigator } from "./src/navigation/AuthNavigator";
+import { MainNavigator } from "./src/navigation/MainNavigator";
 import { clearToken, getToken, setToken } from "./src/storage/authStorage";
 import { delay } from "./src/utils/time";
 
@@ -72,7 +72,7 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {bootState.authed ? (
             <Stack.Screen name="Home">
-              {() => <HomeScreen onSignOut={handleSignOut} />}
+              {() => <MainNavigator onSignOut={handleSignOut} />}
             </Stack.Screen>
           ) : (
             <Stack.Screen name="Auth">

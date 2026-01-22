@@ -5,6 +5,15 @@ export function sanitizeNumericInput(value: string, maxLength?: number): string 
   return typeof maxLength === "number" ? digits.slice(0, maxLength) : digits;
 }
 
+export function sanitizeAmountInput(value: string): string {
+  const normalized = value.replace(/,/g, ".");
+  const filtered = normalized.replace(/[^0-9.]/g, "");
+  const parts = filtered.split(".");
+  const integer = parts[0];
+  const fraction = parts.slice(1).join("").slice(0, 2);
+  return fraction ? `${integer}.${fraction}` : integer;
+}
+
 export function sanitizePhoneInput(value: string): string {
   const cleaned = value.replace(/[^\d+]/g, "");
   if (cleaned.startsWith("+")) {
