@@ -129,6 +129,18 @@ var app = builder.Build();
 // CORS'u EN BAŞTA ekle (diğer middleware'lerden önce)
 app.UseCors("AllowAll");
 
+// OPTIONS isteklerini (CORS preflight) authorization'dan önce handle et
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        await context.Response.CompleteAsync();
+        return;
+    }
+    await next();
+});
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseForwardedHeaders();
 
