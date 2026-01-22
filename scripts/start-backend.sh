@@ -45,7 +45,8 @@ echo -e "${YELLOW}💡 Migrations'ları çalıştırmak için:${NC}"
 echo -e "${YELLOW}  NOVA_DB_CONNECTION=\"Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;Encrypt=False;\" \\${NC}"
 echo -e "${YELLOW}    dotnet ef database update --project src/NovaWallet.Infrastructure --startup-project src/NovaWallet.API${NC}"
 
-# Backend'i başlat
-echo -e "${GREEN}🎯 Backend API başlatılıyor (http://localhost:5000)...${NC}"
+# Backend'i başlat (0.0.0.0 tüm network interface'lerinde dinler)
+echo -e "${GREEN}🎯 Backend API başlatılıyor (http://0.0.0.0:5000)...${NC}"
+echo -e "${YELLOW}💡 Backend'e erişim: http://localhost:5000 veya http://$(ipconfig getifaddr en0 2>/dev/null || echo 'YOUR_IP'):5000${NC}"
 cd src/NovaWallet.API
-dotnet run --urls http://localhost:5000
+dotnet run --urls http://0.0.0.0:5000

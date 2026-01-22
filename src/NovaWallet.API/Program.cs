@@ -72,9 +72,20 @@ if (jwtSettings is null || string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // [AllowAnonymous] endpoint'lerde token yoksa veya geçersizse hata verme
+        // [AllowAnonymous] endpoint'lerde authentication başarısız olsa bile devam et
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {
+            OnAuthenticationFailed = context =>
+            {
+                // [AllowAnonymous] endpoint'lerde authentication hatasını görmezden gel
+                var endpoint = context.HttpContext.GetEndpoint();
+                if (endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute>() != null)
+                {
+                    context.NoResult();
+                    return Task.CompletedTask;
+                }
+                return Task.CompletedTask;
+            },
             OnChallenge = context =>
             {
                 // [AllowAnonymous] endpoint'lerde challenge'ı atla
@@ -86,6 +97,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
                 return Task.CompletedTask;
             }
+        };
+        
+        // Token yoksa veya geçersizse hata verme, sadece authentication'ı başarısız say
+        options.Events.OnTokenValidated = context =>
+        {
+            return Task.CompletedTask;
         };
         
         options.TokenValidationParameters = new TokenValidationParameters
@@ -109,11 +126,11 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+// CORS'u EN BAŞTA ekle (diğer middleware'lerden önce)
+app.UseCors("AllowAll");
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseForwardedHeaders();
-
-// CORS'u en başta, authentication'dan ÖNCE ekle (her zaman)
-app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
 {
