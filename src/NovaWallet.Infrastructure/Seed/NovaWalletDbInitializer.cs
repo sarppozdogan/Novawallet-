@@ -82,12 +82,12 @@ public class NovaWalletDbInitializer
 
         var limits = new List<LimitDefinition>
         {
-            new() { UserType = UserType.Individual, TransactionType = TransactionType.TopUp, MaxDailyAmount = 10000m, MaxPerTransaction = 5000m },
-            new() { UserType = UserType.Individual, TransactionType = TransactionType.P2P, MaxDailyAmount = 10000m, MaxPerTransaction = 2500m },
-            new() { UserType = UserType.Individual, TransactionType = TransactionType.Withdraw, MaxDailyAmount = 5000m, MaxPerTransaction = 2500m },
-            new() { UserType = UserType.Corporate, TransactionType = TransactionType.TopUp, MaxDailyAmount = 100000m, MaxPerTransaction = 50000m },
-            new() { UserType = UserType.Corporate, TransactionType = TransactionType.P2P, MaxDailyAmount = 100000m, MaxPerTransaction = 50000m },
-            new() { UserType = UserType.Corporate, TransactionType = TransactionType.Withdraw, MaxDailyAmount = 50000m, MaxPerTransaction = 25000m }
+            new() { UserType = UserType.Individual, TransactionType = TransactionType.TopUp, CurrencyCode = "TRY", MaxDailyAmount = 10000m, MaxPerTransaction = 5000m },
+            new() { UserType = UserType.Individual, TransactionType = TransactionType.P2P, CurrencyCode = "TRY", MaxDailyAmount = 10000m, MaxPerTransaction = 2500m },
+            new() { UserType = UserType.Individual, TransactionType = TransactionType.Withdraw, CurrencyCode = "TRY", MaxDailyAmount = 5000m, MaxPerTransaction = 2500m },
+            new() { UserType = UserType.Corporate, TransactionType = TransactionType.TopUp, CurrencyCode = "TRY", MaxDailyAmount = 100000m, MaxPerTransaction = 50000m },
+            new() { UserType = UserType.Corporate, TransactionType = TransactionType.P2P, CurrencyCode = "TRY", MaxDailyAmount = 100000m, MaxPerTransaction = 50000m },
+            new() { UserType = UserType.Corporate, TransactionType = TransactionType.Withdraw, CurrencyCode = "TRY", MaxDailyAmount = 50000m, MaxPerTransaction = 25000m }
         };
 
         _dbContext.LimitDefinitions.AddRange(limits);

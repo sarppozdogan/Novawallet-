@@ -12,6 +12,9 @@ public record CompleteProfileRequest(
     string Phone,
     UserType UserType,
     string Password,
+    string? Name,
+    string? Surname,
+    string? Address,
     string? Tckn,
     string? TaxNumber,
     string CurrencyCode = "TRY");

@@ -17,12 +17,19 @@ public class LimitService : ILimitService
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task ValidateAsync(long userId, TransactionType transactionType, decimal amount, CancellationToken cancellationToken = default)
+    public async Task ValidateAsync(long userId, TransactionType transactionType, decimal amount, string currencyCode, CancellationToken cancellationToken = default)
     {
         if (amount <= 0)
         {
             throw new AppException(ErrorCodes.ValidationError, "Amount must be greater than zero.", 400);
         }
+
+        if (string.IsNullOrWhiteSpace(currencyCode))
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Currency is required.", 400);
+        }
+
+        var normalizedCurrency = currencyCode.Trim().ToUpperInvariant();
 
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user is null)
@@ -31,7 +38,11 @@ public class LimitService : ILimitService
         }
 
         var limit = await _dbContext.LimitDefinitions
-            .FirstOrDefaultAsync(l => l.UserType == user.UserType && l.TransactionType == transactionType, cancellationToken);
+            .FirstOrDefaultAsync(
+                l => l.UserType == user.UserType
+                    && l.TransactionType == transactionType
+                    && l.CurrencyCode == normalizedCurrency,
+                cancellationToken);
 
         if (limit is null)
         {

@@ -5,6 +5,7 @@ using NovaWallet.Application.Abstractions.Persistence;
 using NovaWallet.Application.Abstractions.Security;
 using NovaWallet.Application.Abstractions.Services;
 using NovaWallet.Application.Models;
+using NovaWallet.Application.Services;
 using NovaWallet.Infrastructure.Persistence;
 using NovaWallet.Infrastructure.Seed;
 using NovaWallet.Infrastructure.Services;
@@ -36,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IReferenceCodeGenerator, ReferenceCodeGenerator>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddScoped<IBankAccountService, BankAccountService>();
 
         services.AddScoped<NovaWalletDbInitializer>();
 

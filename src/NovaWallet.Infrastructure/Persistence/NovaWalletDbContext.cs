@@ -13,6 +13,7 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
+    public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<LimitDefinition> LimitDefinitions => Set<LimitDefinition>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
@@ -25,7 +26,12 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
         modelBuilder.Entity<User>(builder =>
         {
             builder.HasIndex(u => u.Phone).IsUnique();
+            builder.HasIndex(u => u.TCKN).IsUnique().HasFilter("[TCKN] IS NOT NULL");
+            builder.HasIndex(u => u.TaxNumber).IsUnique().HasFilter("[TaxNumber] IS NOT NULL");
             builder.Property(u => u.Phone).HasMaxLength(20);
+            builder.Property(u => u.Name).HasMaxLength(100);
+            builder.Property(u => u.Surname).HasMaxLength(100);
+            builder.Property(u => u.Address).HasMaxLength(512);
             builder.Property(u => u.PasswordHash).HasMaxLength(256);
             builder.Property(u => u.Salt).HasMaxLength(128);
             builder.Property(u => u.TCKN).HasMaxLength(11);
@@ -45,6 +51,19 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<BankAccount>(builder =>
+        {
+            builder.HasIndex(b => b.Iban).IsUnique();
+            builder.Property(b => b.Iban).HasMaxLength(34);
+            builder.Property(b => b.BankName).HasMaxLength(128);
+            builder.Property(b => b.AccountHolderName).HasMaxLength(128);
+
+            builder.HasOne(b => b.User)
+                .WithMany(u => u.BankAccounts)
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Transaction>(builder =>
         {
             builder.HasKey(t => t.Id);
@@ -53,8 +72,10 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
                 .HasDefaultValueSql("NEWID()");
             builder.Property(t => t.Amount).HasPrecision(19, 4);
             builder.Property(t => t.FeeAmount).HasPrecision(19, 4);
+            builder.Property(t => t.NetTransactionAmount).HasPrecision(19, 4);
             builder.Property(t => t.CurrencyCode).HasMaxLength(3);
             builder.Property(t => t.ReferenceCode).HasMaxLength(64);
+            builder.Property(t => t.Description).HasMaxLength(512);
             builder.HasIndex(t => t.ReferenceCode).IsUnique();
 
             builder.HasOne(t => t.SenderWallet)
@@ -66,12 +87,19 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
                 .WithMany()
                 .HasForeignKey(t => t.ReceiverWalletId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(t => t.BankAccount)
+                .WithMany()
+                .HasForeignKey(t => t.BankAccountId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<LimitDefinition>(builder =>
         {
             builder.Property(l => l.MaxDailyAmount).HasPrecision(19, 4);
             builder.Property(l => l.MaxPerTransaction).HasPrecision(19, 4);
+            builder.Property(l => l.CurrencyCode).HasMaxLength(3);
+            builder.HasIndex(l => new { l.UserType, l.TransactionType, l.CurrencyCode }).IsUnique();
         });
 
         modelBuilder.Entity<OtpCode>(builder =>

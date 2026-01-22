@@ -31,6 +31,11 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new("status", user.Status.ToString())
         };
 
+        if (!string.IsNullOrWhiteSpace(_settings.GatewayKey))
+        {
+            claims.Add(new Claim("key", _settings.GatewayKey));
+        }
+
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,
             audience: _settings.Audience,

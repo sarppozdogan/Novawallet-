@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovaWallet.Infrastructure.Persistence;
 
@@ -11,9 +12,10 @@ using NovaWallet.Infrastructure.Persistence;
 namespace NovaWallet.Infrastructure.Migrations
 {
     [DbContext(typeof(NovaWalletDbContext))]
-    partial class NovaWalletDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260122133000_AddBankAccountsAndTransactionEnhancements")]
+    partial class AddBankAccountsAndTransactionEnhancements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -6,12 +6,12 @@ public class VirtualBankMock : IBankGateway
 {
     private const int ApprovalRate = 80;
 
-    public Task<bool> RequestTopUpAsync(string sourceBank, decimal amount, string currencyCode, string referenceCode, CancellationToken cancellationToken = default)
+    public Task<bool> RequestTopUpAsync(string sourceIban, decimal amount, string currencyCode, string referenceCode, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(IsApproved());
     }
 
-    public Task<bool> RequestWithdrawAsync(string iban, decimal amount, string currencyCode, string referenceCode, CancellationToken cancellationToken = default)
+    public Task<bool> RequestWithdrawAsync(string destinationIban, decimal amount, string currencyCode, string referenceCode, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(IsApproved());
     }

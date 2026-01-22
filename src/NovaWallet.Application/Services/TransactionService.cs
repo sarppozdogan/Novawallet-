@@ -5,6 +5,7 @@ using NovaWallet.Application.Abstractions.Persistence;
 using NovaWallet.Application.Abstractions.Services;
 using NovaWallet.Application.Exceptions;
 using NovaWallet.Application.Models;
+using NovaWallet.Application.Utilities;
 using NovaWallet.Domain.Entities;
 using NovaWallet.Domain.Enums;
 
@@ -48,6 +49,11 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.ValidationError, "Amount must be greater than zero.", 400);
         }
 
+        if (request.BankAccountId <= 0)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Bank account is required.", 400);
+        }
+
         var wallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.Id == request.WalletId, cancellationToken);
         if (wallet is null)
         {
@@ -59,29 +65,38 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.WalletInactive, "Wallet is inactive.", 400);
         }
 
+        await EnsureUserActiveAsync(wallet.UserId, cancellationToken);
+
         EnsureCurrencyMatch(wallet.CurrencyCode, request.CurrencyCode);
-        await _limitService.ValidateAsync(wallet.UserId, TransactionType.TopUp, request.Amount, cancellationToken);
+        await _limitService.ValidateAsync(wallet.UserId, TransactionType.TopUp, request.Amount, wallet.CurrencyCode, cancellationToken);
+
+        var bankAccount = await GetUserBankAccountAsync(wallet.UserId, request.BankAccountId, cancellationToken);
 
         var referenceCode = _referenceCodeGenerator.Generate();
         var feeAmount = CalculateFee(request.Amount, _feeSettings.TopUpFeeRate);
+        var netAmount = CalculateNetTransactionAmount(TransactionType.TopUp, request.Amount, feeAmount);
+        var description = NormalizeDescription(request.Description, "TopUp");
 
         var transaction = new Transaction
         {
             SenderWalletId = null,
             ReceiverWalletId = wallet.Id,
+            BankAccountId = bankAccount.Id,
             TransactionType = TransactionType.TopUp,
             Amount = request.Amount,
             FeeAmount = feeAmount,
+            NetTransactionAmount = netAmount,
             CurrencyCode = wallet.CurrencyCode,
             Status = TransactionStatus.Pending,
             ReferenceCode = referenceCode,
+            Description = description,
             TransactionDate = _dateTimeProvider.UtcNow
         };
 
         _dbContext.Transactions.Add(transaction);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var isApproved = await _bankGateway.RequestTopUpAsync(request.SourceBank, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken);
+        var isApproved = await _bankGateway.RequestTopUpAsync(bankAccount.Iban, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken);
 
         await using var dbTransaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
@@ -94,7 +109,7 @@ public class TransactionService : ITransactionService
                 systemWallet.Balance += feeAmount;
             }
 
-            wallet.Balance += request.Amount - feeAmount;
+            wallet.Balance += netAmount;
             transaction.Status = TransactionStatus.Success;
         }
         else
@@ -117,6 +132,11 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.ValidationError, "Amount must be greater than zero.", 400);
         }
 
+        if (string.IsNullOrWhiteSpace(request.ReceiverWalletNumber))
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Receiver wallet number is required.", 400);
+        }
+
         var senderWallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.Id == request.SenderWalletId, cancellationToken);
         if (senderWallet is null)
         {
@@ -134,10 +154,13 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.WalletInactive, "Sender or receiver wallet is inactive.", 400);
         }
 
+        await EnsureUserActiveAsync(senderWallet.UserId, cancellationToken);
+        await EnsureUserActiveAsync(receiverWallet.UserId, cancellationToken);
+
         EnsureCurrencyMatch(senderWallet.CurrencyCode, request.CurrencyCode);
         EnsureCurrencyMatch(receiverWallet.CurrencyCode, request.CurrencyCode);
 
-        await _limitService.ValidateAsync(senderWallet.UserId, TransactionType.P2P, request.Amount, cancellationToken);
+        await _limitService.ValidateAsync(senderWallet.UserId, TransactionType.P2P, request.Amount, senderWallet.CurrencyCode, cancellationToken);
 
         var feeAmount = CalculateFee(request.Amount, _feeSettings.P2pFeeRate);
         var totalDebit = request.Amount + feeAmount;
@@ -152,12 +175,8 @@ public class TransactionService : ITransactionService
 
         var referenceCode = _referenceCodeGenerator.Generate();
         var transactionDate = _dateTimeProvider.UtcNow;
-
-        await using var dbTransaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-
-        senderWallet.Balance -= totalDebit;
-        receiverWallet.Balance += request.Amount;
-        systemWallet.Balance += feeAmount;
+        var netAmount = CalculateNetTransactionAmount(TransactionType.P2P, request.Amount, feeAmount);
+        var description = NormalizeDescription(request.Description, "P2P Transfer");
 
         var transaction = new Transaction
         {
@@ -166,19 +185,45 @@ public class TransactionService : ITransactionService
             TransactionType = TransactionType.P2P,
             Amount = request.Amount,
             FeeAmount = feeAmount,
+            NetTransactionAmount = netAmount,
             CurrencyCode = senderWallet.CurrencyCode,
-            Status = TransactionStatus.Success,
+            Status = TransactionStatus.Pending,
             ReferenceCode = referenceCode,
+            Description = description,
             TransactionDate = transactionDate
         };
 
         _dbContext.Transactions.Add(transaction);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await dbTransaction.CommitAsync(cancellationToken);
 
-        await _auditLogger.LogAsync("P2P", true, ipAddress, senderWallet.UserId, transaction.Id.ToString(), null, cancellationToken);
+        await using var dbTransaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
+        {
+            senderWallet.Balance -= totalDebit;
+            receiverWallet.Balance += request.Amount;
+            systemWallet.Balance += feeAmount;
 
-        return new TransactionResult(transaction.Id, transaction.ReferenceCode, transaction.Status);
+            transaction.Status = TransactionStatus.Success;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await dbTransaction.CommitAsync(cancellationToken);
+
+            await _auditLogger.LogAsync("P2P", true, ipAddress, senderWallet.UserId, transaction.Id.ToString(), null, cancellationToken);
+            return new TransactionResult(transaction.Id, transaction.ReferenceCode, transaction.Status);
+        }
+        catch (Exception)
+        {
+            await dbTransaction.RollbackAsync(cancellationToken);
+
+            _dbContext.Entry(senderWallet).State = EntityState.Unchanged;
+            _dbContext.Entry(receiverWallet).State = EntityState.Unchanged;
+            _dbContext.Entry(systemWallet).State = EntityState.Unchanged;
+
+            transaction.Status = TransactionStatus.Failed;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _auditLogger.LogAsync("P2P", false, ipAddress, senderWallet.UserId, transaction.Id.ToString(), "Transfer failed", cancellationToken);
+            throw;
+        }
     }
 
     public async Task<TransactionResult> WithdrawAsync(WithdrawRequest request, string ipAddress, CancellationToken cancellationToken = default)
@@ -188,7 +233,10 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.ValidationError, "Amount must be greater than zero.", 400);
         }
 
-        EnsureIbanValid(request.DestinationIban);
+        if (request.BankAccountId <= 0)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Bank account is required.", 400);
+        }
 
         var wallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.Id == request.WalletId, cancellationToken);
         if (wallet is null)
@@ -201,11 +249,17 @@ public class TransactionService : ITransactionService
             throw new AppException(ErrorCodes.WalletInactive, "Wallet is inactive.", 400);
         }
 
+        await EnsureUserActiveAsync(wallet.UserId, cancellationToken);
+
         EnsureCurrencyMatch(wallet.CurrencyCode, request.CurrencyCode);
-        await _limitService.ValidateAsync(wallet.UserId, TransactionType.Withdraw, request.Amount, cancellationToken);
+        await _limitService.ValidateAsync(wallet.UserId, TransactionType.Withdraw, request.Amount, wallet.CurrencyCode, cancellationToken);
+
+        var bankAccount = await GetUserBankAccountAsync(wallet.UserId, request.BankAccountId, cancellationToken);
 
         var feeAmount = CalculateFee(request.Amount, _feeSettings.WithdrawFeeRate);
         var totalDebit = request.Amount + feeAmount;
+        var netAmount = CalculateNetTransactionAmount(TransactionType.Withdraw, request.Amount, feeAmount);
+        var description = NormalizeDescription(request.Description, "Withdraw");
 
         if (wallet.Balance < totalDebit)
         {
@@ -217,12 +271,15 @@ public class TransactionService : ITransactionService
         {
             SenderWalletId = wallet.Id,
             ReceiverWalletId = null,
+            BankAccountId = bankAccount.Id,
             TransactionType = TransactionType.Withdraw,
             Amount = request.Amount,
             FeeAmount = feeAmount,
+            NetTransactionAmount = netAmount,
             CurrencyCode = wallet.CurrencyCode,
             Status = TransactionStatus.Pending,
             ReferenceCode = referenceCode,
+            Description = description,
             TransactionDate = _dateTimeProvider.UtcNow
         };
 
@@ -234,7 +291,7 @@ public class TransactionService : ITransactionService
             await dbTransaction.CommitAsync(cancellationToken);
         }
 
-        var bankApproved = await _bankGateway.RequestWithdrawAsync(request.DestinationIban, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken);
+        var bankApproved = await _bankGateway.RequestWithdrawAsync(bankAccount.Iban, request.Amount, wallet.CurrencyCode, referenceCode, cancellationToken);
 
         await using var finalTransaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         if (bankApproved)
@@ -274,11 +331,14 @@ public class TransactionService : ITransactionService
                 t.TransactionType,
                 t.Amount,
                 t.FeeAmount,
+                t.NetTransactionAmount,
                 t.Status,
                 t.ReferenceCode,
                 t.TransactionDate,
                 t.CurrencyCode,
-                t.ReceiverWalletId == walletId))
+                t.ReceiverWalletId == walletId,
+                t.Description,
+                t.BankAccount != null ? t.BankAccount.Iban : null))
             .ToListAsync(cancellationToken);
 
         return transactions;
@@ -300,17 +360,24 @@ public class TransactionService : ITransactionService
             ? await _dbContext.Wallets.Where(w => w.Id == transaction.ReceiverWalletId.Value).Select(w => w.WalletNumber).FirstOrDefaultAsync(cancellationToken)
             : null;
 
+        var bankAccountIban = transaction.BankAccountId.HasValue
+            ? await _dbContext.BankAccounts.Where(b => b.Id == transaction.BankAccountId.Value).Select(b => b.Iban).FirstOrDefaultAsync(cancellationToken)
+            : null;
+
         return new TransactionDetail(
             transaction.Id,
             transaction.TransactionType,
             transaction.Amount,
             transaction.FeeAmount,
+            transaction.NetTransactionAmount,
             transaction.Status,
             transaction.ReferenceCode,
             transaction.TransactionDate,
             transaction.CurrencyCode,
             senderWalletNumber,
-            receiverWalletNumber);
+            receiverWalletNumber,
+            transaction.Description,
+            bankAccountIban);
     }
 
     private async Task<Wallet> GetSystemWalletAsync(CancellationToken cancellationToken)
@@ -345,22 +412,72 @@ public class TransactionService : ITransactionService
         return decimal.Round(fee, 4, MidpointRounding.AwayFromZero);
     }
 
-    private static void EnsureIbanValid(string iban)
+    private async Task<BankAccount> GetUserBankAccountAsync(long userId, long bankAccountId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(iban))
+        var bankAccount = await _dbContext.BankAccounts.FirstOrDefaultAsync(
+            b => b.Id == bankAccountId && b.UserId == userId,
+            cancellationToken);
+
+        if (bankAccount is null)
         {
-            throw new AppException(ErrorCodes.ValidationError, "IBAN is required.", 400);
+            throw new AppException(ErrorCodes.NotFound, "Bank account not found.", 404);
         }
 
-        var normalized = iban.Replace(" ", string.Empty).ToUpperInvariant();
-        if (!normalized.StartsWith("TR", StringComparison.OrdinalIgnoreCase) || normalized.Length != 26)
+        if (!bankAccount.IsActive)
         {
-            throw new AppException(ErrorCodes.ValidationError, "IBAN format is invalid.", 400);
+            throw new AppException(ErrorCodes.ValidationError, "Bank account is inactive.", 400);
         }
 
-        if (!normalized.Skip(2).All(char.IsDigit))
+        IbanValidator.EnsureValid(bankAccount.Iban);
+        return bankAccount;
+    }
+
+    private async Task EnsureUserActiveAsync(long userId, CancellationToken cancellationToken)
+    {
+        var user = await _dbContext.Users
+            .Select(u => new { u.Id, u.Status })
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (user is null)
         {
-            throw new AppException(ErrorCodes.ValidationError, "IBAN format is invalid.", 400);
+            throw new AppException(ErrorCodes.NotFound, "User not found.", 404);
         }
+
+        if (user.Status == UserStatus.Blocked)
+        {
+            throw new AppException(ErrorCodes.Unauthorized, "User is blocked.", 403);
+        }
+
+        if (user.Status != UserStatus.Active)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "User is not active.", 400);
+        }
+    }
+
+    private static decimal CalculateNetTransactionAmount(TransactionType transactionType, decimal amount, decimal feeAmount)
+    {
+        var net = transactionType == TransactionType.TopUp ? amount - feeAmount : amount;
+        if (net < 0)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Net amount cannot be negative.", 400);
+        }
+
+        return net;
+    }
+
+    private static string NormalizeDescription(string? description, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return fallback;
+        }
+
+        var trimmed = description.Trim();
+        if (trimmed.Length > 512)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Description is too long.", 400);
+        }
+
+        return trimmed;
     }
 }

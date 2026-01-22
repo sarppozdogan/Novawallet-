@@ -1,0 +1,20 @@
+apisix:
+  node_listen: 9080
+  enable_admin: true
+  allow_admin:
+    - 0.0.0.0/0
+
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://etcd:2379"
+    prefix: "/apisix"
+    timeout: 30
+  admin:
+    admin_key:
+      - name: "admin"
+        key: "CHANGE_ME_APISIX_ADMIN_KEY"
+        role: admin

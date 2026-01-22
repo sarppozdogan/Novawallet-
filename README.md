@@ -25,13 +25,13 @@ cp src/NovaWallet.API/appsettings.Development.json.example src/NovaWallet.API/ap
 Option B - user secrets
 
 ```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Password=ChangeThis!2345;TrustServerCertificate=True;Encrypt=False;" --project src/NovaWallet.API
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Password=NovaWallet!2345;TrustServerCertificate=True;Encrypt=False;" --project src/NovaWallet.API
 ```
 
 4) Apply migrations
 
 ```bash
-NOVA_DB_CONNECTION="Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Password=ChangeThis!2345;TrustServerCertificate=True;Encrypt=False;" \
+NOVA_DB_CONNECTION="Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Password=NovaWallet!2345;TrustServerCertificate=True;Encrypt=False;" \
   dotnet ef database update --project src/NovaWallet.Infrastructure --startup-project src/NovaWallet.Infrastructure
 ```
 
@@ -39,4 +39,31 @@ NOVA_DB_CONNECTION="Server=localhost,1433;Database=NovaWalletDb;User Id=sa;Passw
 
 ```bash
 dotnet run --project src/NovaWallet.API
+```
+
+Notes
+
+- TopUp and Withdraw now require a registered bank account. Use `POST /api/bank-accounts` to create one.
+
+Optional: APISIX API Gateway
+
+1) Start APISIX + etcd
+
+```bash
+docker compose up -d apisix etcd
+```
+
+2) Start API (HTTP)
+
+```bash
+dotnet run --project src/NovaWallet.API --urls http://localhost:5000
+```
+
+3) Configure APISIX routes and JWT validation
+
+```bash
+APISIX_ADMIN_KEY=CHANGE_ME_APISIX_ADMIN_KEY \
+JWT_SECRET=CHANGE_ME_32_CHAR_SECRET_KEY_123456 \
+JWT_KEY=novawallet \
+./apisix/scripts/bootstrap.sh
 ```

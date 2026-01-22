@@ -4,8 +4,13 @@ namespace NovaWallet.Infrastructure.Services;
 
 public class KpsMockService : IKpsService
 {
-    public Task<bool> ValidateTcknAsync(string tckn, CancellationToken cancellationToken = default)
+    public Task<bool> ValidateIdentityAsync(string tckn, string name, string surname, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(surname))
+        {
+            return Task.FromResult(false);
+        }
+
         if (string.IsNullOrWhiteSpace(tckn) || tckn.Length != 11 || tckn[0] == '0')
         {
             return Task.FromResult(false);

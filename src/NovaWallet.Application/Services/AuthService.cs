@@ -148,16 +148,38 @@ public class AuthService : IAuthService
 
         if (request.UserType == UserType.Individual)
         {
+            var name = request.Name?.Trim();
+            var surname = request.Surname?.Trim();
+
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(surname))
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Name and surname are required for individual users.", 400);
+            }
+
+            if (name.Length > 100 || surname.Length > 100)
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Name or surname is too long.", 400);
+            }
+
             if (string.IsNullOrWhiteSpace(request.Tckn))
             {
                 throw new AppException(ErrorCodes.ValidationError, "TCKN is required for individual users.", 400);
             }
 
-            var isValidTckn = await _kpsService.ValidateTcknAsync(request.Tckn, cancellationToken);
+            var tcknInUse = await _dbContext.Users.AnyAsync(u => u.TCKN == request.Tckn && u.Id != user.Id, cancellationToken);
+            if (tcknInUse)
+            {
+                throw new AppException(ErrorCodes.Conflict, "TCKN is already registered.", 409);
+            }
+
+            var isValidTckn = await _kpsService.ValidateIdentityAsync(request.Tckn, name, surname, cancellationToken);
             if (!isValidTckn)
             {
                 throw new AppException(ErrorCodes.ValidationError, "TCKN validation failed.", 400);
             }
+
+            user.Name = name;
+            user.Surname = surname;
         }
         else
         {
@@ -165,11 +187,42 @@ public class AuthService : IAuthService
             {
                 throw new AppException(ErrorCodes.ValidationError, "Tax number is required for corporate users.", 400);
             }
+
+            var taxNumberInUse = await _dbContext.Users.AnyAsync(u => u.TaxNumber == request.TaxNumber && u.Id != user.Id, cancellationToken);
+            if (taxNumberInUse)
+            {
+                throw new AppException(ErrorCodes.Conflict, "Tax number is already registered.", 409);
+            }
         }
 
         user.UserType = request.UserType;
+        var address = request.Address?.Trim();
+        if (!string.IsNullOrWhiteSpace(address) && address.Length > 512)
+        {
+            throw new AppException(ErrorCodes.ValidationError, "Address is too long.", 400);
+        }
+
+        user.Address = address;
         user.TCKN = request.UserType == UserType.Individual ? request.Tckn : null;
         user.TaxNumber = request.UserType == UserType.Corporate ? request.TaxNumber : null;
+        if (request.UserType == UserType.Corporate)
+        {
+            var corporateName = request.Name?.Trim();
+            var corporateSurname = request.Surname?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(corporateName) && corporateName.Length > 100)
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Name is too long.", 400);
+            }
+
+            if (!string.IsNullOrWhiteSpace(corporateSurname) && corporateSurname.Length > 100)
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Surname is too long.", 400);
+            }
+
+            user.Name = corporateName;
+            user.Surname = corporateSurname;
+        }
         user.Status = UserStatus.Active;
         var salt = _passwordHasher.GenerateSalt();
         user.Salt = salt;
