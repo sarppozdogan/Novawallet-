@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getBankAccounts, BankAccountSummary } from "../api/bankAccounts";
-import { topUp } from "../api/transactions";
+import { withdraw } from "../api/transactions";
 import { getWallets, WalletSummary } from "../api/wallets";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { GlassButton } from "../components/GlassButton";
@@ -17,9 +17,9 @@ import { formatApiError } from "../utils/errorMapper";
 import { formatAmount } from "../utils/formatters";
 import { sanitizeAmountInput } from "../utils/validation";
 
-type Props = NativeStackScreenProps<MainStackParamList, "TopUp">;
+type Props = NativeStackScreenProps<MainStackParamList, "Withdraw">;
 
-export function TopUpScreen({ navigation, route }: Props) {
+export function WithdrawScreen({ navigation, route }: Props) {
   const initialWalletId = route.params?.walletId;
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccountSummary[]>([]);
@@ -48,7 +48,7 @@ export function TopUpScreen({ navigation, route }: Props) {
         }
       } catch (err) {
         if (mounted) {
-          setError(formatApiError(err, "Unable to load top up data."));
+          setError(formatApiError(err, "Unable to load withdraw data."));
         }
       } finally {
         if (mounted) {
@@ -76,7 +76,7 @@ export function TopUpScreen({ navigation, route }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await topUp({
+      const result = await withdraw({
         walletId: selectedWallet.id,
         amount: amountValue,
         bankAccountId: selectedBankAccountId,
@@ -84,14 +84,14 @@ export function TopUpScreen({ navigation, route }: Props) {
         description: description.trim() || null
       });
 
-      navigation.navigate("TopUpResult", {
+      navigation.navigate("WithdrawResult", {
         transactionId: result.transactionId,
         referenceCode: result.referenceCode,
         status: result.status,
         walletId: selectedWallet.id
       });
     } catch (err) {
-      setError(formatApiError(err, "Unable to complete top up."));
+      setError(formatApiError(err, "Unable to complete withdraw."));
     } finally {
       setSubmitting(false);
     }
@@ -104,8 +104,8 @@ export function TopUpScreen({ navigation, route }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             <GlassButton title="Back" variant="ghost" onPress={() => navigation.goBack()} style={styles.back} />
 
-            <Text style={styles.kicker}>Top up</Text>
-            <Text style={styles.title}>Move money into your wallet</Text>
+            <Text style={styles.kicker}>Withdraw</Text>
+            <Text style={styles.title}>Send funds to your bank</Text>
 
             {error ? <ErrorBanner message={error} /> : null}
 
@@ -146,7 +146,7 @@ export function TopUpScreen({ navigation, route }: Props) {
                 label="Description (optional)"
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Top up" 
+                placeholder="Withdraw" 
                 maxLength={140}
               />
             </GlassCard>
@@ -181,7 +181,7 @@ export function TopUpScreen({ navigation, route }: Props) {
             </GlassCard>
 
             <GlassButton
-              title={submitting ? "Processing" : "Confirm top up"}
+              title={submitting ? "Processing" : "Confirm withdraw"}
               onPress={handleSubmit}
               loading={submitting}
               disabled={!canSubmit || submitting}

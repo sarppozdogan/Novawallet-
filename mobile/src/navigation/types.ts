@@ -12,4 +12,11 @@ export type MainStackParamList = {
   TransactionDetail: { transactionId: string };
   TopUp: { walletId?: number };
   TopUpResult: { transactionId: string; referenceCode: string; status: number; walletId: number };
+  Withdraw: { walletId?: number };
+  WithdrawResult: { transactionId: string; referenceCode: string; status: number; walletId: number };
+  P2P: { walletId?: number };
+  P2PResult: { transactionId: string; referenceCode: string; status: number; walletId: number };
+  BankAccounts: undefined;
+  BankAccountDetail: { accountId: number };
+  BankAccountCreate: undefined;
 };
