@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { getToken } from "../storage/authStorage";
 
 const hostUri =
@@ -8,8 +9,9 @@ const hostUri =
   "";
 
 const inferredHost = hostUri ? hostUri.split(":")[0] : "";
-const isIosSimulator = Boolean(Constants.platform?.ios?.simulator);
-const defaultHost = isIosSimulator ? "localhost" : inferredHost;
+const isIos = Platform.OS === "ios";
+const isSimulator = Boolean(Constants.platform?.ios?.simulator) || (isIos && Constants.isDevice === false);
+const defaultHost = isSimulator ? "localhost" : inferredHost;
 const fallbackHost = process.env.EXPO_PUBLIC_API_HOST || defaultHost || "localhost";
 const fallbackPort = process.env.EXPO_PUBLIC_API_PORT || "5100";
 const DEFAULT_BASE_URL = `http://${fallbackHost}:${fallbackPort}`;
