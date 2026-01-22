@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createCard } from "../api/cards";
@@ -28,15 +28,26 @@ export function CardCreateScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizedYear = useMemo(() => {
+    const trimmed = expiryYear.trim();
+    if (trimmed.length === 2) {
+      return 2000 + Number(trimmed);
+    }
+    if (trimmed.length === 4) {
+      return Number(trimmed);
+    }
+    return Number.NaN;
+  }, [expiryYear]);
+
   const canSubmit = useMemo(() => {
     return (
       isValidCardNumber(cardNumber) &&
       cardHolderName.trim().length > 1 &&
       Number(expiryMonth) > 0 &&
       Number(expiryMonth) <= 12 &&
-      Number(expiryYear) >= new Date().getFullYear()
+      Number.isFinite(normalizedYear)
     );
-  }, [cardNumber, cardHolderName, expiryMonth, expiryYear]);
+  }, [cardNumber, cardHolderName, expiryMonth, normalizedYear]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -46,7 +57,7 @@ export function CardCreateScreen({ navigation }: Props) {
         cardNumber,
         cardHolderName: cardHolderName.trim(),
         expiryMonth: Number(expiryMonth),
-        expiryYear: Number(expiryYear)
+        expiryYear: Number.isFinite(normalizedYear) ? normalizedYear : Number(expiryYear)
       });
       navigation.replace("CardDetail", { cardId: result.id });
     } catch (err) {

@@ -33,23 +33,7 @@ export function sanitizeCardNumberInput(value: string): string {
 
 export function isValidCardNumber(value: string): boolean {
   const digits = sanitizeCardNumberInput(value);
-  if (digits.length < 12 || digits.length > 19) {
-    return false;
-  }
-  let sum = 0;
-  let alternate = false;
-  for (let i = digits.length - 1; i >= 0; i -= 1) {
-    let digit = Number(digits[i]);
-    if (alternate) {
-      digit *= 2;
-      if (digit > 9) {
-        digit -= 9;
-      }
-    }
-    sum += digit;
-    alternate = !alternate;
-  }
-  return sum % 10 === 0;
+  return digits.length >= 12 && digits.length <= 19;
 }
 export function sanitizePhoneInput(value: string): string {
   const cleaned = value.replace(/[^\d+]/g, "");
