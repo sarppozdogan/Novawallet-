@@ -72,6 +72,22 @@ if (jwtSettings is null || string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // [AllowAnonymous] endpoint'lerde token yoksa veya geçersizse hata verme
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                // [AllowAnonymous] endpoint'lerde challenge'ı atla
+                var endpoint = context.HttpContext.GetEndpoint();
+                if (endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute>() != null)
+                {
+                    context.HandleResponse();
+                    return Task.CompletedTask;
+                }
+                return Task.CompletedTask;
+            }
+        };
+        
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -84,17 +100,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Default policy: Herhangi bir policy belirtilmemişse, authorization gerekmez
+    // [AllowAnonymous] attribute'u olan endpoint'ler her zaman erişilebilir
+    options.FallbackPolicy = null;
+});
 
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseForwardedHeaders();
 
-// CORS'u authentication'dan önce ekle
+// CORS'u en başta, authentication'dan ÖNCE ekle (her zaman)
+app.UseCors("AllowAll");
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseCors("AllowAll");
     app.UseSwagger();
     app.UseSwaggerUI();
 }
