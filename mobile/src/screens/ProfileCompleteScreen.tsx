@@ -28,11 +28,11 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ProfileComplete">;
 type UserType = "individual" | "corporate";
 
 export function ProfileCompleteScreen({ navigation, route }: Props) {
-  const { phone } = route.params;
+  const { phone, tckn: initialTckn } = route.params;
   const [userType, setUserType] = useState<UserType>("individual");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
-  const [tckn, setTckn] = useState("");
+  const [tckn, setTckn] = useState(initialTckn ?? "");
   const [taxNumber, setTaxNumber] = useState("");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
@@ -76,7 +76,7 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
       }
       if (!isValidTckn(tckn)) {
         setLoading(false);
-        setLocalError("TCKN must be a valid 11-digit identifier.");
+        setLocalError("TCKN must be 11 digits.");
         return;
       }
     } else if (!isValidTaxNumber(taxNumber)) {

@@ -21,7 +21,7 @@ const steps = ["Phone", "OTP", "Profile"];
 type Props = NativeStackScreenProps<AuthStackParamList, "OtpVerify">;
 
 export function OtpVerifyScreen({ navigation, route }: Props) {
-  const { phone } = route.params;
+  const { phone, tckn } = route.params;
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -45,7 +45,7 @@ export function OtpVerifyScreen({ navigation, route }: Props) {
     setInfo(null);
     try {
       await verifyOtp(phone, code.trim());
-      navigation.navigate("ProfileComplete", { phone });
+      navigation.navigate("ProfileComplete", { phone, tckn });
     } catch (err) {
       setError(formatApiError(err, "Unable to verify OTP."));
     } finally {
@@ -93,7 +93,7 @@ export function OtpVerifyScreen({ navigation, route }: Props) {
                 title="Edit phone"
                 variant="ghost"
                 style={styles.secondaryButton}
-                onPress={() => navigation.navigate("RegisterStart", { phone })}
+                onPress={() => navigation.navigate("RegisterStart", { phone, tckn })}
               />
               <GlassButton
                 title={cooldown > 0 ? `Resend in 00:${String(cooldown).padStart(2, "0")}` : "Resend code"}

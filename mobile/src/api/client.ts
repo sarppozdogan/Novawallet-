@@ -88,7 +88,8 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
       baseUrl: API_BASE_URL
     });
     throw new ApiError(
-      `API sunucusuna ulaşılamadı (${API_BASE_URL}). Lütfen ağ bağlantısını ve API adresini kontrol edin. Hata: ${errorMessage}`
+      `API sunucusuna ulaşılamadı (${API_BASE_URL}). Lütfen ağ bağlantısını ve API adresini kontrol edin. Hata: ${errorMessage}`,
+      "NetworkError"
     );
   }
 

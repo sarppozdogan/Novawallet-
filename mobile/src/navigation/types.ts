@@ -1,7 +1,7 @@
 export type AuthStackParamList = {
-  RegisterStart: { phone?: string } | undefined;
-  OtpVerify: { phone: string };
-  ProfileComplete: { phone: string };
+  RegisterStart: { phone?: string; tckn?: string } | undefined;
+  OtpVerify: { phone: string; tckn?: string };
+  ProfileComplete: { phone: string; tckn?: string };
   Login: { phone?: string } | undefined;
 };
 

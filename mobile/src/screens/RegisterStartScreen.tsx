@@ -14,7 +14,7 @@ import { AuthStackParamList } from "../navigation/types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { formatApiError } from "../utils/errorMapper";
-import { isValidPhone, sanitizePhoneInput } from "../utils/validation";
+import { isValidPhone, isValidTckn, sanitizeNumericInput, sanitizePhoneInput } from "../utils/validation";
 
 const steps = ["Phone", "OTP", "Profile"];
 
@@ -22,12 +22,14 @@ type Props = NativeStackScreenProps<AuthStackParamList, "RegisterStart">;
 
 export function RegisterStartScreen({ navigation, route }: Props) {
   const initialPhone = route.params?.phone ?? "";
+  const initialTckn = route.params?.tckn ?? "";
   const [phone, setPhone] = useState(initialPhone);
+  const [tckn, setTckn] = useState(initialTckn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const canContinue = useMemo(() => isValidPhone(phone), [phone]);
+  const canContinue = useMemo(() => isValidPhone(phone) && isValidTckn(tckn), [phone, tckn]);
 
   const handleContinue = async () => {
     setLoading(true);
@@ -36,7 +38,7 @@ export function RegisterStartScreen({ navigation, route }: Props) {
     try {
       await registerStart(phone.trim());
       setInfo("Verification code sent. Please check your messages.");
-      navigation.navigate("OtpVerify", { phone: phone.trim() });
+      navigation.navigate("OtpVerify", { phone: phone.trim(), tckn: tckn.trim() });
     } catch (err) {
       setError(formatApiError(err, "Unable to start registration."));
     } finally {
@@ -65,6 +67,14 @@ export function RegisterStartScreen({ navigation, route }: Props) {
                 onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
                 keyboardType="phone-pad"
                 placeholder="+90 5xx xxx xxxx"
+              />
+              <GlassInput
+                label="TC Kimlik No"
+                value={tckn}
+                onChangeText={(value) => setTckn(sanitizeNumericInput(value, 11))}
+                keyboardType="number-pad"
+                placeholder="11 haneli kimlik numarası"
+                maxLength={11}
               />
               <GlassButton
                 title="Send OTP"
