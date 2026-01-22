@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: novawallet
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: "https://example.com/novawallet.git"
+    targetRevision: main
+    path: infra/helm/novawallet
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: novawallet
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

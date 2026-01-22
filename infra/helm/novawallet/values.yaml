@@ -1,0 +1,25 @@
+replicaCount: 2
+
+image:
+  repository: novawallet-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: novawallet.local
+
+env:
+  ASPNETCORE_ENVIRONMENT: Production
+  OBSERVABILITY__OPENTELEMETRY__ENABLED: "true"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+
+secrets:
+  ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=NovaWalletDb;User Id=sa;Password=NovaWallet!2345;TrustServerCertificate=True;Encrypt=False;"
+  JwtSettings__Issuer: "novawallet"
+  JwtSettings__Audience: "novawallet"
+  JwtSettings__SecretKey: "CHANGE_ME_32_CHAR_SECRET_KEY_123456"

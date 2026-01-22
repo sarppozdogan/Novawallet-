@@ -1,0 +1,18 @@
+namespace: novawallet
+resources:
+  - redis.yaml
+  - rabbitmq.yaml
+  - zookeeper.yaml
+  - kafka.yaml
+  - elasticsearch.yaml
+  - kibana.yaml
+  - keycloak-postgres.yaml
+  - keycloak.yaml
+  - jaeger.yaml
+  - otel-collector.yaml
+  - prometheus.yaml
+  - grafana.yaml
+  - sqlserver.yaml
+  - sonar-postgres.yaml
+  - sonarqube.yaml
+  - jenkins.yaml

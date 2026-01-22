@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: novawallet-api
+  namespace: novawallet
+spec:
+  rules:
+    - host: novawallet.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: novawallet-api
+                port:
+                  number: 80

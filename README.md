@@ -67,3 +67,7 @@ JWT_SECRET=CHANGE_ME_32_CHAR_SECRET_KEY_123456 \
 JWT_KEY=novawallet \
 ./apisix/scripts/bootstrap.sh
 ```
+
+Enterprise stack (local)
+
+- See `infra/README.md` for Keycloak, Redis, RabbitMQ, Kafka, Elastic, OpenTelemetry, Prometheus, Grafana, SonarQube, Jenkins, K8s, Helm, Terraform, Ansible templates.

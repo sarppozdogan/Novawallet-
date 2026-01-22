@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: novawallet-api
+  namespace: novawallet
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: novawallet-api
+  template:
+    metadata:
+      labels:
+        app: novawallet-api
+    spec:
+      containers:
+        - name: novawallet-api
+          image: novawallet-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: novawallet-api-config
+            - secretRef:
+                name: novawallet-api-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10

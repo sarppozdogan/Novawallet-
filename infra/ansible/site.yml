@@ -1,0 +1,6 @@
+- name: NovaWallet provisioning (placeholder)
+  hosts: novawallet
+  tasks:
+    - name: Print status
+      ansible.builtin.debug:
+        msg: "Add provisioning tasks here (Docker, K8s tools, etc.)"

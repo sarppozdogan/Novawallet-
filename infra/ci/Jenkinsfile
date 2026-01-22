@@ -1,0 +1,25 @@
+pipeline {
+  agent any
+
+  environment {
+    DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+  }
+
+  stages {
+    stage("Restore") {
+      steps {
+        sh "dotnet restore NovaWallet.sln"
+      }
+    }
+    stage("Build") {
+      steps {
+        sh "dotnet build NovaWallet.sln -c Release --no-restore"
+      }
+    }
+    stage("Test") {
+      steps {
+        sh "dotnet test NovaWallet.sln -c Release --no-build"
+      }
+    }
+  }
+}

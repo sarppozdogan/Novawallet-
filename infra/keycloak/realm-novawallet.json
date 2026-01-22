@@ -1,0 +1,38 @@
+{
+  "realm": "novawallet",
+  "enabled": true,
+  "displayName": "NovaWallet",
+  "clients": [
+    {
+      "clientId": "novawallet-api",
+      "name": "NovaWallet API",
+      "protocol": "openid-connect",
+      "secret": "novawallet-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "novawallet-mobile",
+      "name": "NovaWallet Mobile",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

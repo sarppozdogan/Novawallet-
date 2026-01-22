@@ -1,0 +1,197 @@
+services:
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: novawallet-keycloak-db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    ports:
+      - "5433:5432"
+    volumes:
+      - novawallet_keycloak_pg:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: novawallet-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    volumes:
+      - ../../keycloak/realm-novawallet.json:/opt/keycloak/data/import/realm-novawallet.json:ro
+    ports:
+      - "8081:8080"
+    depends_on:
+      - keycloak-db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: novawallet-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: novawallet-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: novawallet
+      RABBITMQ_DEFAULT_PASS: novawallet
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    container_name: novawallet-zookeeper
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: novawallet-kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: novawallet-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - novawallet_es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.2
+    container_name: novawallet-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: novawallet-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.98.0
+    container_name: novawallet-otel-collector
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./otel-collector.yml:/etc/otel-collector.yaml:ro
+    ports:
+      - "4319:4317"
+      - "4320:4318"
+      - "9464:9464"
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: novawallet-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: novawallet-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - novawallet_grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  sonar-db:
+    image: postgres:16-alpine
+    container_name: novawallet-sonar-db
+    environment:
+      POSTGRES_DB: sonar
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - novawallet_sonar_pg:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: novawallet-sonarqube
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9000:9000"
+    depends_on:
+      - sonar-db
+    volumes:
+      - novawallet_sonar_data:/opt/sonarqube/data
+      - novawallet_sonar_extensions:/opt/sonarqube/extensions
+      - novawallet_sonar_logs:/opt/sonarqube/logs
+    restart: unless-stopped
+
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: novawallet-jenkins
+    ports:
+      - "8082:8080"
+      - "50000:50000"
+    volumes:
+      - novawallet_jenkins_home:/var/jenkins_home
+    restart: unless-stopped
+
+volumes:
+  novawallet_keycloak_pg:
+  novawallet_es_data:
+  novawallet_grafana_data:
+  novawallet_sonar_pg:
+  novawallet_sonar_data:
+  novawallet_sonar_extensions:
+  novawallet_sonar_logs:
+  novawallet_jenkins_home:

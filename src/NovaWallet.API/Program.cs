@@ -8,8 +8,15 @@ using NovaWallet.Application.DependencyInjection;
 using NovaWallet.Application.Models;
 using NovaWallet.Infrastructure.DependencyInjection;
 using NovaWallet.Infrastructure.Seed;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var observabilityEnabled = builder.Configuration.GetValue("Observability:OpenTelemetry:Enabled", false);
+var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+var serviceName = builder.Configuration.GetValue<string>("Observability:OpenTelemetry:ServiceName") ?? "novawallet-api";
 
 // CORS yapılandırması - Development için tüm origin'lere izin ver
 builder.Services.AddCors(options =>
@@ -59,6 +66,37 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
+
+builder.Services.AddHealthChecks();
+
+if (observabilityEnabled)
+{
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService(serviceName))
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation();
+
+            if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+            {
+                tracing.AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint));
+            }
+        })
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddPrometheusExporter();
+
+            if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+            {
+                metrics.AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint));
+            }
+        });
+}
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -159,6 +197,11 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
+if (observabilityEnabled)
+{
+    app.MapPrometheusScrapingEndpoint("/metrics");
+}
 
 using (var scope = app.Services.CreateScope())
 {
