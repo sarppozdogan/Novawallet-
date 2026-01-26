@@ -15,6 +15,7 @@ public record CompleteProfileRequest(
     string? Name,
     string? Surname,
     string? Address,
+    DateTime? DateOfBirth,
     string? Tckn,
     string? TaxNumber,
     string CurrencyCode = "TRY");

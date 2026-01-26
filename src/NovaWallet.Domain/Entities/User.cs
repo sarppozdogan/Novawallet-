@@ -15,6 +15,7 @@ public class User
     public string Salt { get; set; } = string.Empty;
     public string? TCKN { get; set; }
     public string? TaxNumber { get; set; }
+    public DateTime? DateOfBirth { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public ICollection<Wallet> Wallets { get; set; } = new List<Wallet>();

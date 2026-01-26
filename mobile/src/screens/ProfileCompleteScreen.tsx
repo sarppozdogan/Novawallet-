@@ -15,7 +15,16 @@ import { fonts } from "../theme/typography";
 import { useI18n } from "../i18n/I18nProvider";
 import { formatApiError } from "../utils/errorMapper";
 import { createScaledStyles } from "../theme/scale";
-import { isValidCurrencyCode, isValidPassword, isValidTaxNumber, isValidTckn, sanitizeNumericInput } from "../utils/validation";
+import {
+  formatBirthDate,
+  isAtLeastAge,
+  isValidBirthDate,
+  isValidCurrencyCode,
+  isValidPassword,
+  isValidTaxNumber,
+  isValidTckn,
+  sanitizeNumericInput
+} from "../utils/validation";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ProfileComplete">;
 
@@ -28,6 +37,9 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [tckn, setTckn] = useState(initialTckn ?? "");
+  const [birthDay, setBirthDay] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [taxNumber, setTaxNumber] = useState("");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
@@ -44,10 +56,15 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
       return false;
     }
     if (userType === "individual") {
-      return name.trim().length > 0 && surname.trim().length > 0 && isValidTckn(tckn);
+      return (
+        name.trim().length > 0 &&
+        surname.trim().length > 0 &&
+        isValidTckn(tckn) &&
+        isAtLeastAge(birthDay, birthMonth, birthYear, 18)
+      );
     }
     return isValidTaxNumber(taxNumber);
-  }, [password, userType, name, surname, tckn, taxNumber, currencyCode]);
+  }, [password, userType, name, surname, tckn, birthDay, birthMonth, birthYear, taxNumber, currencyCode]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -69,6 +86,16 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
         setLocalError(t("auth.error_name_surname_required"));
         return;
       }
+      if (!isValidBirthDate(birthDay, birthMonth, birthYear)) {
+        setLoading(false);
+        setLocalError(t("auth.error_birth_date"));
+        return;
+      }
+      if (!isAtLeastAge(birthDay, birthMonth, birthYear, 18)) {
+        setLoading(false);
+        setLocalError(t("auth.error_age"));
+        return;
+      }
       if (!isValidTckn(tckn)) {
         setLoading(false);
         setLocalError(t("auth.error_tckn"));
@@ -80,6 +107,8 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
       return;
     }
     try {
+      const formattedBirthDate =
+        userType === "individual" ? formatBirthDate(birthDay, birthMonth, birthYear) : null;
       await completeProfile({
         phone,
         userType: userType === "individual" ? 1 : 2,
@@ -88,6 +117,7 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
         surname: surname.trim() || null,
         address: address.trim() || null,
         tckn: userType === "individual" ? tckn.trim() : null,
+        dateOfBirth: userType === "individual" ? formattedBirthDate : null,
         taxNumber: userType === "corporate" ? taxNumber.trim() : null,
         currencyCode: currencyCode.trim().toUpperCase() || "TRY"
       });
@@ -160,6 +190,38 @@ export function ProfileCompleteScreen({ navigation, route }: Props) {
                     placeholder={t("auth.tckn_short_placeholder")}
                     maxLength={11}
                   />
+                  <View style={styles.birthRow}>
+                    <View style={styles.birthField}>
+                      <GlassInput
+                        label={t("auth.birth_day_label")}
+                        value={birthDay}
+                        onChangeText={(value) => setBirthDay(sanitizeNumericInput(value, 2))}
+                        keyboardType="number-pad"
+                        placeholder={t("auth.birth_day_placeholder")}
+                        maxLength={2}
+                      />
+                    </View>
+                    <View style={styles.birthField}>
+                      <GlassInput
+                        label={t("auth.birth_month_label")}
+                        value={birthMonth}
+                        onChangeText={(value) => setBirthMonth(sanitizeNumericInput(value, 2))}
+                        keyboardType="number-pad"
+                        placeholder={t("auth.birth_month_placeholder")}
+                        maxLength={2}
+                      />
+                    </View>
+                    <View style={[styles.birthField, styles.birthFieldWide, styles.birthFieldLast]}>
+                      <GlassInput
+                        label={t("auth.birth_year_label")}
+                        value={birthYear}
+                        onChangeText={(value) => setBirthYear(sanitizeNumericInput(value, 4))}
+                        keyboardType="number-pad"
+                        placeholder={t("auth.birth_year_placeholder")}
+                        maxLength={4}
+                      />
+                    </View>
+                  </View>
                 </>
               ) : (
                 <>
@@ -282,5 +344,18 @@ const styles = createScaledStyles({
   },
   segmentTextActive: {
     color: colors.textPrimary
+  },
+  birthRow: {
+    flexDirection: "row"
+  },
+  birthField: {
+    flex: 1,
+    marginRight: 10
+  },
+  birthFieldWide: {
+    flex: 1.3
+  },
+  birthFieldLast: {
+    marginRight: 0
   }
 });

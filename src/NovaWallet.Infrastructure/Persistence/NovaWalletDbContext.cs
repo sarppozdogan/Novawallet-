@@ -37,6 +37,7 @@ public class NovaWalletDbContext : DbContext, INovaWalletDbContext
             builder.Property(u => u.Salt).HasMaxLength(128);
             builder.Property(u => u.TCKN).HasMaxLength(11);
             builder.Property(u => u.TaxNumber).HasMaxLength(20);
+            builder.Property(u => u.DateOfBirth).HasColumnType("date");
         });
 
         modelBuilder.Entity<Wallet>(builder =>

@@ -153,6 +153,8 @@ public class AuthService : IAuthService
         {
             var name = request.Name?.Trim();
             var surname = request.Surname?.Trim();
+            var tckn = request.Tckn?.Trim();
+            var dateOfBirth = request.DateOfBirth?.Date;
 
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(surname))
             {
@@ -164,18 +166,39 @@ public class AuthService : IAuthService
                 throw new AppException(ErrorCodes.ValidationError, "Name or surname is too long.", 400);
             }
 
-            if (string.IsNullOrWhiteSpace(request.Tckn))
+            if (!dateOfBirth.HasValue)
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Date of birth is required for individual users.", 400);
+            }
+
+            var today = _dateTimeProvider.UtcNow.Date;
+            if (!IsValidBirthDate(dateOfBirth.Value, today))
+            {
+                throw new AppException(ErrorCodes.ValidationError, "Date of birth is invalid.", 400);
+            }
+
+            if (!IsAtLeastAge(dateOfBirth.Value, 18, today))
+            {
+                throw new AppException(ErrorCodes.ValidationError, "User must be at least 18 years old.", 400);
+            }
+
+            if (string.IsNullOrWhiteSpace(tckn))
             {
                 throw new AppException(ErrorCodes.ValidationError, "TCKN is required for individual users.", 400);
             }
 
-            var tcknInUse = await _dbContext.Users.AnyAsync(u => u.TCKN == request.Tckn && u.Id != user.Id, cancellationToken);
+            if (!IsValidTckn(tckn))
+            {
+                throw new AppException(ErrorCodes.ValidationError, "TCKN validation failed.", 400);
+            }
+
+            var tcknInUse = await _dbContext.Users.AnyAsync(u => u.TCKN == tckn && u.Id != user.Id, cancellationToken);
             if (tcknInUse)
             {
                 throw new AppException(ErrorCodes.Conflict, "TCKN is already registered.", 409);
             }
 
-            var isValidTckn = await _kpsService.ValidateIdentityAsync(request.Tckn, name, surname, cancellationToken);
+            var isValidTckn = await _kpsService.ValidateIdentityAsync(tckn, name, surname, cancellationToken);
             if (!isValidTckn)
             {
                 throw new AppException(ErrorCodes.ValidationError, "TCKN validation failed.", 400);
@@ -206,7 +229,8 @@ public class AuthService : IAuthService
         }
 
         user.Address = address;
-        user.TCKN = request.UserType == UserType.Individual ? request.Tckn : null;
+        user.TCKN = request.UserType == UserType.Individual ? request.Tckn?.Trim() : null;
+        user.DateOfBirth = request.UserType == UserType.Individual ? request.DateOfBirth?.Date : null;
         user.TaxNumber = request.UserType == UserType.Corporate ? request.TaxNumber : null;
         if (request.UserType == UserType.Corporate)
         {
@@ -299,5 +323,52 @@ public class AuthService : IAuthService
         }
 
         return phone.Trim();
+    }
+
+    private static bool IsValidTckn(string tckn)
+    {
+        if (tckn.Length != 11)
+        {
+            return false;
+        }
+
+        var sum = 0;
+        for (var i = 0; i < 10; i++)
+        {
+            var c = tckn[i];
+            if (c < '0' || c > '9')
+            {
+                return false;
+            }
+
+            sum += c - '0';
+        }
+
+        var lastChar = tckn[10];
+        if (lastChar < '0' || lastChar > '9')
+        {
+            return false;
+        }
+
+        return sum % 10 == lastChar - '0';
+    }
+
+    private static bool IsValidBirthDate(DateTime birthDate, DateTime today)
+    {
+        return birthDate.Date <= today;
+    }
+
+    private static bool IsAtLeastAge(DateTime birthDate, int age, DateTime today)
+    {
+        var birth = birthDate.Date;
+        if (birth > today)
+        {
+            return false;
+        }
+
+        var cutoffYear = today.Year - age;
+        var cutoffDay = Math.Min(today.Day, DateTime.DaysInMonth(cutoffYear, today.Month));
+        var cutoffDate = new DateTime(cutoffYear, today.Month, cutoffDay);
+        return birth <= cutoffDate;
     }
 }

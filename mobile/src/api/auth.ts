@@ -72,6 +72,7 @@ export async function completeProfile(payload: {
   name?: string | null;
   surname?: string | null;
   address?: string | null;
+  dateOfBirth?: string | null;
   tckn?: string | null;
   taxNumber?: string | null;
   currencyCode?: string | null;

@@ -70,5 +70,87 @@ export function isValidTaxNumber(value: string): boolean {
 }
 
 export function isValidTckn(value: string): boolean {
-  return /^\d{11}$/.test(value);
+  if (!/^\d{11}$/.test(value)) {
+    return false;
+  }
+
+  let sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += Number(value[i]);
+  }
+
+  return sum % 10 === Number(value[10]);
+}
+
+type BirthDateParts = {
+  day: number;
+  month: number;
+  year: number;
+};
+
+function parseBirthDateParts(day: string, month: string, year: string): BirthDateParts | null {
+  if (!/^\d{1,2}$/.test(day) || !/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) {
+    return null;
+  }
+
+  const parsedDay = Number(day);
+  const parsedMonth = Number(month);
+  const parsedYear = Number(year);
+
+  if (parsedMonth < 1 || parsedMonth > 12 || parsedDay < 1 || parsedDay > 31) {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(parsedYear, parsedMonth - 1, parsedDay));
+  if (
+    date.getUTCFullYear() !== parsedYear ||
+    date.getUTCMonth() !== parsedMonth - 1 ||
+    date.getUTCDate() !== parsedDay
+  ) {
+    return null;
+  }
+
+  return { day: parsedDay, month: parsedMonth, year: parsedYear };
+}
+
+export function isValidBirthDate(day: string, month: string, year: string): boolean {
+  return parseBirthDateParts(day, month, year) !== null;
+}
+
+export function isAtLeastAge(day: string, month: string, year: string, age: number): boolean {
+  const parts = parseBirthDateParts(day, month, year);
+  if (!parts) {
+    return false;
+  }
+
+  const today = new Date();
+  const cutoffYear = today.getFullYear() - age;
+
+  if (parts.year < cutoffYear) {
+    return true;
+  }
+  if (parts.year > cutoffYear) {
+    return false;
+  }
+
+  const currentMonth = today.getMonth() + 1;
+  if (parts.month < currentMonth) {
+    return true;
+  }
+  if (parts.month > currentMonth) {
+    return false;
+  }
+
+  return parts.day <= today.getDate();
+}
+
+export function formatBirthDate(day: string, month: string, year: string): string | null {
+  const parts = parseBirthDateParts(day, month, year);
+  if (!parts) {
+    return null;
+  }
+
+  const paddedDay = String(parts.day).padStart(2, "0");
+  const paddedMonth = String(parts.month).padStart(2, "0");
+  return `${parts.year}-${paddedMonth}-${paddedDay}`;
 }
