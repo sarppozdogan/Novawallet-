@@ -1,0 +1,1330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_NovaWallet"
+                  targetNamespace="http://example.com/novawallet"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.40.1">
+  <bpmn:process id="NovaWalletAppFlow" name="NovaWallet App End-to-End Flow" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_AppOpen" name="Uygulama açılır">
+      <bpmn:outgoing>Flow_AppOpen_Splash</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="UserTask_SplashScreen" name="Splash ekranı">
+      <bpmn:incoming>Flow_AppOpen_Splash</bpmn:incoming>
+      <bpmn:outgoing>Flow_Splash_Check</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="ServiceTask_SplashCheck" name="Token kontrolü" camunda:type="external" camunda:topic="check-session">
+      <bpmn:incoming>Flow_Splash_Check</bpmn:incoming>
+      <bpmn:outgoing>Flow_Splash_Token</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_TokenExists" name="Token var mı?">
+      <bpmn:incoming>Flow_Splash_Token</bpmn:incoming>
+      <bpmn:outgoing>Flow_TokenYes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_TokenNo</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:subProcess id="SubProcess_Auth" name="Kimlik doğrulama &amp; kayıt">
+      <bpmn:incoming>Flow_TokenNo</bpmn:incoming>
+      <bpmn:incoming>Flow_SignedOutYes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Auth_to_Main</bpmn:outgoing>
+
+      <bpmn:startEvent id="StartEvent_AuthStart" name="Kimlik doğrulama başlar">
+        <bpmn:outgoing>AuthFlow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="UserTask_LoginScreen" name="Giriş ekranı (telefon + şifre + dil)">
+        <bpmn:incoming>AuthFlow_1</bpmn:incoming>
+        <bpmn:incoming>AuthFlow_5_fail</bpmn:incoming>
+        <bpmn:incoming>AuthFlow_13_yes</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:exclusiveGateway id="Gateway_LoginAction" name="Giriş mi / Kayıt mı?">
+        <bpmn:incoming>AuthFlow_2</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_3_login</bpmn:outgoing>
+        <bpmn:outgoing>AuthFlow_3_register</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:serviceTask id="ServiceTask_Login" name="Login" camunda:type="external" camunda:topic="login">
+        <bpmn:incoming>AuthFlow_3_login</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_4</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_LoginResult" name="Login sonucu?">
+        <bpmn:incoming>AuthFlow_4</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_5_success</bpmn:outgoing>
+        <bpmn:outgoing>AuthFlow_5_requiresProfile</bpmn:outgoing>
+        <bpmn:outgoing>AuthFlow_5_fail</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:endEvent id="EndEvent_AuthSuccess" name="Giriş başarılı">
+        <bpmn:incoming>AuthFlow_5_success</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <bpmn:userTask id="UserTask_RegisterStart" name="Kayıt başlangıcı (telefon + TCKN)">
+        <bpmn:incoming>AuthFlow_3_register</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_6</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_SendOtp" name="OTP gönder" camunda:type="external" camunda:topic="send-otp">
+        <bpmn:incoming>AuthFlow_6</bpmn:incoming>
+        <bpmn:incoming>AuthFlow_5_requiresProfile</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_7</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:userTask id="UserTask_EnterOtp" name="OTP kodu gir">
+        <bpmn:incoming>AuthFlow_7</bpmn:incoming>
+        <bpmn:incoming>AuthFlow_10_no</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_8</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_VerifyOtp" name="OTP doğrula" camunda:type="external" camunda:topic="verify-otp">
+        <bpmn:incoming>AuthFlow_8</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_9</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_OtpVerifyOk" name="OTP doğrulama başarılı mı?">
+        <bpmn:incoming>AuthFlow_9</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_10_yes</bpmn:outgoing>
+        <bpmn:outgoing>AuthFlow_10_no</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="UserTask_CompleteProfile" name="Profil tamamla (Bireysel/Kurumsal, ad/soyad, TCKN/Vergi No, şifre, adres, para birimi)">
+        <bpmn:incoming>AuthFlow_10_yes</bpmn:incoming>
+        <bpmn:incoming>AuthFlow_13_no</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_11</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_SaveProfile" name="Profil kaydet" camunda:type="external" camunda:topic="complete-profile">
+        <bpmn:incoming>AuthFlow_11</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_12</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_ProfileCompleted" name="Profil tamamlandı mı?">
+        <bpmn:incoming>AuthFlow_12</bpmn:incoming>
+        <bpmn:outgoing>AuthFlow_13_yes</bpmn:outgoing>
+        <bpmn:outgoing>AuthFlow_13_no</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <bpmn:sequenceFlow id="AuthFlow_1" sourceRef="StartEvent_AuthStart" targetRef="UserTask_LoginScreen" />
+      <bpmn:sequenceFlow id="AuthFlow_2" sourceRef="UserTask_LoginScreen" targetRef="Gateway_LoginAction" />
+      <bpmn:sequenceFlow id="AuthFlow_3_login" sourceRef="Gateway_LoginAction" targetRef="ServiceTask_Login">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${authAction == "LOGIN"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_3_register" sourceRef="Gateway_LoginAction" targetRef="UserTask_RegisterStart">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${authAction == "REGISTER"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_4" sourceRef="ServiceTask_Login" targetRef="Gateway_LoginResult" />
+      <bpmn:sequenceFlow id="AuthFlow_5_success" sourceRef="Gateway_LoginResult" targetRef="EndEvent_AuthSuccess">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${loginOk == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_5_requiresProfile" sourceRef="Gateway_LoginResult" targetRef="ServiceTask_SendOtp">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${requiresProfile == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_5_fail" sourceRef="Gateway_LoginResult" targetRef="UserTask_LoginScreen">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${loginOk == false &amp;&amp; requiresProfile == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_6" sourceRef="UserTask_RegisterStart" targetRef="ServiceTask_SendOtp" />
+      <bpmn:sequenceFlow id="AuthFlow_7" sourceRef="ServiceTask_SendOtp" targetRef="UserTask_EnterOtp" />
+      <bpmn:sequenceFlow id="AuthFlow_8" sourceRef="UserTask_EnterOtp" targetRef="ServiceTask_VerifyOtp" />
+      <bpmn:sequenceFlow id="AuthFlow_9" sourceRef="ServiceTask_VerifyOtp" targetRef="Gateway_OtpVerifyOk" />
+      <bpmn:sequenceFlow id="AuthFlow_10_yes" sourceRef="Gateway_OtpVerifyOk" targetRef="UserTask_CompleteProfile">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${otpValid == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_10_no" sourceRef="Gateway_OtpVerifyOk" targetRef="UserTask_EnterOtp">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${otpValid == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_11" sourceRef="UserTask_CompleteProfile" targetRef="ServiceTask_SaveProfile" />
+      <bpmn:sequenceFlow id="AuthFlow_12" sourceRef="ServiceTask_SaveProfile" targetRef="Gateway_ProfileCompleted" />
+      <bpmn:sequenceFlow id="AuthFlow_13_yes" sourceRef="Gateway_ProfileCompleted" targetRef="UserTask_LoginScreen">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${profileCompleted == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="AuthFlow_13_no" sourceRef="Gateway_ProfileCompleted" targetRef="UserTask_CompleteProfile">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${profileCompleted == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+    </bpmn:subProcess>
+
+    <bpmn:subProcess id="SubProcess_Main" name="Ana akış (Cüzdanlar)">
+      <bpmn:incoming>Flow_TokenYes</bpmn:incoming>
+      <bpmn:incoming>Flow_Auth_to_Main</bpmn:incoming>
+      <bpmn:outgoing>Flow_Main_to_SignedOut</bpmn:outgoing>
+
+      <bpmn:startEvent id="StartEvent_MainStart" name="Ana akış başlar">
+        <bpmn:outgoing>MainFlow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="UserTask_WalletsScreen" name="Cüzdanlarım ekranı (aksiyon menüsü)">
+        <bpmn:incoming>MainFlow_1</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_GetWallets" name="Cüzdan listesi getir" camunda:type="external" camunda:topic="get-wallets">
+        <bpmn:incoming>MainFlow_2</bpmn:incoming>
+        <bpmn:incoming>MainFlow_Action_Refresh</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_3</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_WalletExists" name="Cüzdan var mı?">
+        <bpmn:incoming>MainFlow_3</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_4_yes</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_4_no</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="UserTask_NoWalletEmptyState" name="Cüzdan yok (profil tamamla uyarısı)">
+        <bpmn:incoming>MainFlow_4_no</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_5</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:exclusiveGateway id="Gateway_ActionMenu" name="İşlem seçimi">
+        <bpmn:incoming>MainFlow_4_yes</bpmn:incoming>
+        <bpmn:incoming>MainFlow_5</bpmn:incoming>
+        <bpmn:incoming>MainFlow_WalletDetail_Back</bpmn:incoming>
+        <bpmn:incoming>MainFlow_Transactions_Return</bpmn:incoming>
+        <bpmn:incoming>MainFlow_TopUp_5</bpmn:incoming>
+        <bpmn:incoming>MainFlow_Withdraw_5</bpmn:incoming>
+        <bpmn:incoming>MainFlow_P2P_5</bpmn:incoming>
+        <bpmn:incoming>MainFlow_Cards_Return</bpmn:incoming>
+        <bpmn:incoming>MainFlow_Bank_Return</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_Action_WalletDetail</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_Transactions</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_TopUp</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_Withdraw</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_P2P</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_Cards</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_Bank</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_Refresh</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_SignOut</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Action_Exit</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <bpmn:serviceTask id="ServiceTask_GetWalletDetail" name="Cüzdan detayını getir" camunda:type="external" camunda:topic="get-wallet-detail">
+        <bpmn:incoming>MainFlow_Action_WalletDetail</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_WalletDetail_1</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:userTask id="UserTask_WalletDetailScreen" name="Cüzdan detayı (TopUp/Withdraw/P2P/İşlemler)">
+        <bpmn:incoming>MainFlow_WalletDetail_1</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_WalletDetail_2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:exclusiveGateway id="Gateway_WalletDetailAction" name="Cüzdan detay aksiyonu">
+        <bpmn:incoming>MainFlow_WalletDetail_2</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_WalletDetail_Back</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_WalletDetail_TopUp</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_WalletDetail_Withdraw</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_WalletDetail_P2P</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_WalletDetail_Transactions</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <bpmn:subProcess id="SubProcess_TransactionsFlow" name="İşlemler akışı">
+        <bpmn:startEvent id="StartEvent_TransactionsStart" name="İşlemler başlar">
+          <bpmn:outgoing>TxFlow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:serviceTask id="ServiceTask_Tx_GetTransactions" name="İşlemleri getir" camunda:type="external" camunda:topic="get-transactions">
+          <bpmn:incoming>TxFlow_1</bpmn:incoming>
+          <bpmn:outgoing>TxFlow_2</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:userTask id="UserTask_Tx_TransactionsScreen" name="İşlemler ekranı (liste)">
+          <bpmn:incoming>TxFlow_2</bpmn:incoming>
+          <bpmn:incoming>TxFlow_6</bpmn:incoming>
+          <bpmn:outgoing>TxFlow_3</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:exclusiveGateway id="Gateway_Tx_Action" name="İşlem seçimi">
+          <bpmn:incoming>TxFlow_3</bpmn:incoming>
+          <bpmn:outgoing>TxFlow_4_detail</bpmn:outgoing>
+          <bpmn:outgoing>TxFlow_4_back</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+        <bpmn:serviceTask id="ServiceTask_Tx_GetDetail" name="İşlem detayı getir" camunda:type="external" camunda:topic="get-transaction-detail">
+          <bpmn:incoming>TxFlow_4_detail</bpmn:incoming>
+          <bpmn:outgoing>TxFlow_5</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:userTask id="UserTask_Tx_DetailScreen" name="İşlem detay ekranı">
+          <bpmn:incoming>TxFlow_5</bpmn:incoming>
+          <bpmn:outgoing>TxFlow_6</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:endEvent id="EndEvent_Tx_Done" name="İşlemler bitti">
+          <bpmn:incoming>TxFlow_4_back</bpmn:incoming>
+        </bpmn:endEvent>
+
+        <bpmn:sequenceFlow id="TxFlow_1" sourceRef="StartEvent_TransactionsStart" targetRef="ServiceTask_Tx_GetTransactions" />
+        <bpmn:sequenceFlow id="TxFlow_2" sourceRef="ServiceTask_Tx_GetTransactions" targetRef="UserTask_Tx_TransactionsScreen" />
+        <bpmn:sequenceFlow id="TxFlow_3" sourceRef="UserTask_Tx_TransactionsScreen" targetRef="Gateway_Tx_Action" />
+        <bpmn:sequenceFlow id="TxFlow_4_detail" sourceRef="Gateway_Tx_Action" targetRef="ServiceTask_Tx_GetDetail">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${txAction == "DETAIL"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="TxFlow_4_back" sourceRef="Gateway_Tx_Action" targetRef="EndEvent_Tx_Done">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${txAction == "BACK"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="TxFlow_5" sourceRef="ServiceTask_Tx_GetDetail" targetRef="UserTask_Tx_DetailScreen" />
+        <bpmn:sequenceFlow id="TxFlow_6" sourceRef="UserTask_Tx_DetailScreen" targetRef="UserTask_Tx_TransactionsScreen" />
+      </bpmn:subProcess>
+
+      <bpmn:serviceTask id="ServiceTask_LoadTopUpData" name="TopUp verilerini getir (cüzdan/banka/kart)" camunda:type="external" camunda:topic="load-topup-data">
+        <bpmn:incoming>MainFlow_Action_TopUp</bpmn:incoming>
+        <bpmn:incoming>MainFlow_WalletDetail_TopUp</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_TopUp_1</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:userTask id="UserTask_TopUpScreen" name="Para yükle ekranı (cüzdan + kaynak + tutar)">
+        <bpmn:incoming>MainFlow_TopUp_1</bpmn:incoming>
+        <bpmn:incoming>MainFlow_TopUp_4_no</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_TopUp_2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_CreateTopUp" name="TopUp oluştur" camunda:type="external" camunda:topic="create-topup">
+        <bpmn:incoming>MainFlow_TopUp_2</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_TopUp_3</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_TopUpOk" name="TopUp başarılı mı?">
+        <bpmn:incoming>MainFlow_TopUp_3</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_TopUp_4_yes</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_TopUp_4_no</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="UserTask_TopUpResult" name="TopUp sonuç ekranı">
+        <bpmn:incoming>MainFlow_TopUp_4_yes</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_TopUp_5</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <bpmn:serviceTask id="ServiceTask_LoadWithdrawData" name="Withdraw verilerini getir (cüzdan/banka)" camunda:type="external" camunda:topic="load-withdraw-data">
+        <bpmn:incoming>MainFlow_Action_Withdraw</bpmn:incoming>
+        <bpmn:incoming>MainFlow_WalletDetail_Withdraw</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_Withdraw_1</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:userTask id="UserTask_WithdrawScreen" name="Para çek ekranı (cüzdan + banka + tutar)">
+        <bpmn:incoming>MainFlow_Withdraw_1</bpmn:incoming>
+        <bpmn:incoming>MainFlow_Withdraw_4_no</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_Withdraw_2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_CreateWithdraw" name="Withdraw oluştur" camunda:type="external" camunda:topic="create-withdraw">
+        <bpmn:incoming>MainFlow_Withdraw_2</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_Withdraw_3</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_WithdrawOk" name="Withdraw başarılı mı?">
+        <bpmn:incoming>MainFlow_Withdraw_3</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_Withdraw_4_yes</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_Withdraw_4_no</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="UserTask_WithdrawResult" name="Withdraw sonuç ekranı">
+        <bpmn:incoming>MainFlow_Withdraw_4_yes</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_Withdraw_5</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <bpmn:serviceTask id="ServiceTask_LoadP2PData" name="P2P verilerini getir (cüzdanlar)" camunda:type="external" camunda:topic="load-p2p-data">
+        <bpmn:incoming>MainFlow_Action_P2P</bpmn:incoming>
+        <bpmn:incoming>MainFlow_WalletDetail_P2P</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_P2P_1</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:userTask id="UserTask_P2PScreen" name="Gönder (P2P) ekranı">
+        <bpmn:incoming>MainFlow_P2P_1</bpmn:incoming>
+        <bpmn:incoming>MainFlow_P2P_4_no</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_P2P_2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="ServiceTask_CreateP2P" name="P2P transfer oluştur" camunda:type="external" camunda:topic="create-p2p">
+        <bpmn:incoming>MainFlow_P2P_2</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_P2P_3</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:exclusiveGateway id="Gateway_P2POk" name="Transfer başarılı mı?">
+        <bpmn:incoming>MainFlow_P2P_3</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_P2P_4_yes</bpmn:outgoing>
+        <bpmn:outgoing>MainFlow_P2P_4_no</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="UserTask_P2PResult" name="P2P sonuç ekranı">
+        <bpmn:incoming>MainFlow_P2P_4_yes</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_P2P_5</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <bpmn:subProcess id="SubProcess_CardsFlow" name="Kartlar akışı">
+        <bpmn:startEvent id="StartEvent_CardsStart" name="Kartlar başlar">
+          <bpmn:outgoing>CardFlow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:serviceTask id="ServiceTask_Cards_GetCards" name="Kartları getir" camunda:type="external" camunda:topic="get-cards">
+          <bpmn:incoming>CardFlow_1</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_2</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:userTask id="UserTask_Cards_List" name="Kartlar ekranı (liste)">
+          <bpmn:incoming>CardFlow_2</bpmn:incoming>
+          <bpmn:incoming>CardFlow_9_back</bpmn:incoming>
+          <bpmn:incoming>CardFlow_10</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_3</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:exclusiveGateway id="Gateway_Cards_Action" name="Kart aksiyonu">
+          <bpmn:incoming>CardFlow_3</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_4_add</bpmn:outgoing>
+          <bpmn:outgoing>CardFlow_4_detail</bpmn:outgoing>
+          <bpmn:outgoing>CardFlow_4_back</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+        <bpmn:userTask id="UserTask_Cards_Create" name="Kart ekle ekranı">
+          <bpmn:incoming>CardFlow_4_add</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_5</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:serviceTask id="ServiceTask_Cards_Add" name="Kart ekle" camunda:type="external" camunda:topic="add-card">
+          <bpmn:incoming>CardFlow_5</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_6</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:serviceTask id="ServiceTask_Cards_GetDetail" name="Kart detayı getir" camunda:type="external" camunda:topic="get-card-detail">
+          <bpmn:incoming>CardFlow_4_detail</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_7</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:userTask id="UserTask_Cards_Detail" name="Kart detay ekranı">
+          <bpmn:incoming>CardFlow_6</bpmn:incoming>
+          <bpmn:incoming>CardFlow_7</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_8</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:exclusiveGateway id="Gateway_Cards_DetailAction" name="Kart detay aksiyonu">
+          <bpmn:incoming>CardFlow_8</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_9_back</bpmn:outgoing>
+          <bpmn:outgoing>CardFlow_9_deactivate</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+        <bpmn:serviceTask id="ServiceTask_Cards_Deactivate" name="Kart pasifleştir" camunda:type="external" camunda:topic="deactivate-card">
+          <bpmn:incoming>CardFlow_9_deactivate</bpmn:incoming>
+          <bpmn:outgoing>CardFlow_10</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:endEvent id="EndEvent_Cards_Done" name="Kartlar bitti">
+          <bpmn:incoming>CardFlow_4_back</bpmn:incoming>
+        </bpmn:endEvent>
+
+        <bpmn:sequenceFlow id="CardFlow_1" sourceRef="StartEvent_CardsStart" targetRef="ServiceTask_Cards_GetCards" />
+        <bpmn:sequenceFlow id="CardFlow_2" sourceRef="ServiceTask_Cards_GetCards" targetRef="UserTask_Cards_List" />
+        <bpmn:sequenceFlow id="CardFlow_3" sourceRef="UserTask_Cards_List" targetRef="Gateway_Cards_Action" />
+        <bpmn:sequenceFlow id="CardFlow_4_add" sourceRef="Gateway_Cards_Action" targetRef="UserTask_Cards_Create">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${cardAction == "ADD"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="CardFlow_4_detail" sourceRef="Gateway_Cards_Action" targetRef="ServiceTask_Cards_GetDetail">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${cardAction == "DETAIL"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="CardFlow_4_back" sourceRef="Gateway_Cards_Action" targetRef="EndEvent_Cards_Done">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${cardAction == "BACK"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="CardFlow_5" sourceRef="UserTask_Cards_Create" targetRef="ServiceTask_Cards_Add" />
+        <bpmn:sequenceFlow id="CardFlow_6" sourceRef="ServiceTask_Cards_Add" targetRef="UserTask_Cards_Detail" />
+        <bpmn:sequenceFlow id="CardFlow_7" sourceRef="ServiceTask_Cards_GetDetail" targetRef="UserTask_Cards_Detail" />
+        <bpmn:sequenceFlow id="CardFlow_8" sourceRef="UserTask_Cards_Detail" targetRef="Gateway_Cards_DetailAction" />
+        <bpmn:sequenceFlow id="CardFlow_9_back" sourceRef="Gateway_Cards_DetailAction" targetRef="UserTask_Cards_List">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${cardDetailAction == "BACK"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="CardFlow_9_deactivate" sourceRef="Gateway_Cards_DetailAction" targetRef="ServiceTask_Cards_Deactivate">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${cardDetailAction == "DEACTIVATE"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="CardFlow_10" sourceRef="ServiceTask_Cards_Deactivate" targetRef="UserTask_Cards_List" />
+      </bpmn:subProcess>
+
+      <bpmn:subProcess id="SubProcess_BankAccountsFlow" name="Banka hesapları akışı">
+        <bpmn:startEvent id="StartEvent_BankStart" name="Banka hesapları başlar">
+          <bpmn:outgoing>BankFlow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:serviceTask id="ServiceTask_Bank_GetAccounts" name="Banka hesaplarını getir" camunda:type="external" camunda:topic="get-bank-accounts">
+          <bpmn:incoming>BankFlow_1</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_2</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:userTask id="UserTask_Bank_List" name="Banka hesapları ekranı (liste)">
+          <bpmn:incoming>BankFlow_2</bpmn:incoming>
+          <bpmn:incoming>BankFlow_9_back</bpmn:incoming>
+          <bpmn:incoming>BankFlow_10</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_3</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:exclusiveGateway id="Gateway_Bank_Action" name="Banka hesabı aksiyonu">
+          <bpmn:incoming>BankFlow_3</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_4_add</bpmn:outgoing>
+          <bpmn:outgoing>BankFlow_4_detail</bpmn:outgoing>
+          <bpmn:outgoing>BankFlow_4_back</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+        <bpmn:userTask id="UserTask_Bank_Create" name="Banka hesabı ekle ekranı">
+          <bpmn:incoming>BankFlow_4_add</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_5</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:serviceTask id="ServiceTask_Bank_Add" name="Banka hesabı ekle" camunda:type="external" camunda:topic="add-bank-account">
+          <bpmn:incoming>BankFlow_5</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_6</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:serviceTask id="ServiceTask_Bank_GetDetail" name="Banka hesabı detayı getir" camunda:type="external" camunda:topic="get-bank-account-detail">
+          <bpmn:incoming>BankFlow_4_detail</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_7</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:userTask id="UserTask_Bank_Detail" name="Banka hesap detay ekranı">
+          <bpmn:incoming>BankFlow_6</bpmn:incoming>
+          <bpmn:incoming>BankFlow_7</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_8</bpmn:outgoing>
+        </bpmn:userTask>
+        <bpmn:exclusiveGateway id="Gateway_Bank_DetailAction" name="Banka hesap detay aksiyonu">
+          <bpmn:incoming>BankFlow_8</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_9_back</bpmn:outgoing>
+          <bpmn:outgoing>BankFlow_9_deactivate</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+        <bpmn:serviceTask id="ServiceTask_Bank_Deactivate" name="Banka hesabı pasifleştir" camunda:type="external" camunda:topic="deactivate-bank-account">
+          <bpmn:incoming>BankFlow_9_deactivate</bpmn:incoming>
+          <bpmn:outgoing>BankFlow_10</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:endEvent id="EndEvent_Bank_Done" name="Banka hesapları bitti">
+          <bpmn:incoming>BankFlow_4_back</bpmn:incoming>
+        </bpmn:endEvent>
+
+        <bpmn:sequenceFlow id="BankFlow_1" sourceRef="StartEvent_BankStart" targetRef="ServiceTask_Bank_GetAccounts" />
+        <bpmn:sequenceFlow id="BankFlow_2" sourceRef="ServiceTask_Bank_GetAccounts" targetRef="UserTask_Bank_List" />
+        <bpmn:sequenceFlow id="BankFlow_3" sourceRef="UserTask_Bank_List" targetRef="Gateway_Bank_Action" />
+        <bpmn:sequenceFlow id="BankFlow_4_add" sourceRef="Gateway_Bank_Action" targetRef="UserTask_Bank_Create">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bankAction == "ADD"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="BankFlow_4_detail" sourceRef="Gateway_Bank_Action" targetRef="ServiceTask_Bank_GetDetail">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bankAction == "DETAIL"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="BankFlow_4_back" sourceRef="Gateway_Bank_Action" targetRef="EndEvent_Bank_Done">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bankAction == "BACK"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="BankFlow_5" sourceRef="UserTask_Bank_Create" targetRef="ServiceTask_Bank_Add" />
+        <bpmn:sequenceFlow id="BankFlow_6" sourceRef="ServiceTask_Bank_Add" targetRef="UserTask_Bank_Detail" />
+        <bpmn:sequenceFlow id="BankFlow_7" sourceRef="ServiceTask_Bank_GetDetail" targetRef="UserTask_Bank_Detail" />
+        <bpmn:sequenceFlow id="BankFlow_8" sourceRef="UserTask_Bank_Detail" targetRef="Gateway_Bank_DetailAction" />
+        <bpmn:sequenceFlow id="BankFlow_9_back" sourceRef="Gateway_Bank_DetailAction" targetRef="UserTask_Bank_List">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bankDetailAction == "BACK"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="BankFlow_9_deactivate" sourceRef="Gateway_Bank_DetailAction" targetRef="ServiceTask_Bank_Deactivate">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${bankDetailAction == "DEACTIVATE"}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="BankFlow_10" sourceRef="ServiceTask_Bank_Deactivate" targetRef="UserTask_Bank_List" />
+      </bpmn:subProcess>
+
+      <bpmn:serviceTask id="ServiceTask_SignOut" name="Oturumu kapat (token temizle)" camunda:type="external" camunda:topic="sign-out">
+        <bpmn:incoming>MainFlow_Action_SignOut</bpmn:incoming>
+        <bpmn:outgoing>MainFlow_SignOut_1</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="EndEvent_MainSignedOut" name="Çıkış yapıldı">
+        <bpmn:incoming>MainFlow_SignOut_1</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:endEvent id="EndEvent_MainExit" name="Uygulama kapatıldı">
+        <bpmn:incoming>MainFlow_Action_Exit</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <bpmn:sequenceFlow id="MainFlow_1" sourceRef="StartEvent_MainStart" targetRef="UserTask_WalletsScreen" />
+      <bpmn:sequenceFlow id="MainFlow_2" sourceRef="UserTask_WalletsScreen" targetRef="ServiceTask_GetWallets" />
+      <bpmn:sequenceFlow id="MainFlow_3" sourceRef="ServiceTask_GetWallets" targetRef="Gateway_WalletExists" />
+      <bpmn:sequenceFlow id="MainFlow_4_yes" sourceRef="Gateway_WalletExists" targetRef="Gateway_ActionMenu">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletCount &gt; 0}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_4_no" sourceRef="Gateway_WalletExists" targetRef="UserTask_NoWalletEmptyState">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletCount == 0}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_5" sourceRef="UserTask_NoWalletEmptyState" targetRef="Gateway_ActionMenu" />
+
+      <bpmn:sequenceFlow id="MainFlow_Action_WalletDetail" sourceRef="Gateway_ActionMenu" targetRef="ServiceTask_GetWalletDetail">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "WALLET_DETAIL"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_Transactions" sourceRef="Gateway_ActionMenu" targetRef="SubProcess_TransactionsFlow">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "TRANSACTIONS"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_TopUp" sourceRef="Gateway_ActionMenu" targetRef="ServiceTask_LoadTopUpData">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "TOPUP"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_Withdraw" sourceRef="Gateway_ActionMenu" targetRef="ServiceTask_LoadWithdrawData">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "WITHDRAW"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_P2P" sourceRef="Gateway_ActionMenu" targetRef="ServiceTask_LoadP2PData">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "P2P"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_Cards" sourceRef="Gateway_ActionMenu" targetRef="SubProcess_CardsFlow">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "CARDS"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_Bank" sourceRef="Gateway_ActionMenu" targetRef="SubProcess_BankAccountsFlow">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "BANK_ACCOUNTS"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_Refresh" sourceRef="Gateway_ActionMenu" targetRef="ServiceTask_GetWallets">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "REFRESH"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_SignOut" sourceRef="Gateway_ActionMenu" targetRef="ServiceTask_SignOut">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "SIGN_OUT"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Action_Exit" sourceRef="Gateway_ActionMenu" targetRef="EndEvent_MainExit">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${action == "EXIT"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_1" sourceRef="ServiceTask_GetWalletDetail" targetRef="UserTask_WalletDetailScreen" />
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_2" sourceRef="UserTask_WalletDetailScreen" targetRef="Gateway_WalletDetailAction" />
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_Back" sourceRef="Gateway_WalletDetailAction" targetRef="Gateway_ActionMenu">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletDetailAction == "BACK"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_TopUp" sourceRef="Gateway_WalletDetailAction" targetRef="ServiceTask_LoadTopUpData">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletDetailAction == "TOPUP"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_Withdraw" sourceRef="Gateway_WalletDetailAction" targetRef="ServiceTask_LoadWithdrawData">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletDetailAction == "WITHDRAW"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_P2P" sourceRef="Gateway_WalletDetailAction" targetRef="ServiceTask_LoadP2PData">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletDetailAction == "P2P"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_WalletDetail_Transactions" sourceRef="Gateway_WalletDetailAction" targetRef="SubProcess_TransactionsFlow">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${walletDetailAction == "TRANSACTIONS"}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+
+      <bpmn:sequenceFlow id="MainFlow_Transactions_Return" sourceRef="SubProcess_TransactionsFlow" targetRef="Gateway_ActionMenu" />
+      <bpmn:sequenceFlow id="MainFlow_Cards_Return" sourceRef="SubProcess_CardsFlow" targetRef="Gateway_ActionMenu" />
+      <bpmn:sequenceFlow id="MainFlow_Bank_Return" sourceRef="SubProcess_BankAccountsFlow" targetRef="Gateway_ActionMenu" />
+
+      <bpmn:sequenceFlow id="MainFlow_TopUp_1" sourceRef="ServiceTask_LoadTopUpData" targetRef="UserTask_TopUpScreen" />
+      <bpmn:sequenceFlow id="MainFlow_TopUp_2" sourceRef="UserTask_TopUpScreen" targetRef="ServiceTask_CreateTopUp" />
+      <bpmn:sequenceFlow id="MainFlow_TopUp_3" sourceRef="ServiceTask_CreateTopUp" targetRef="Gateway_TopUpOk" />
+      <bpmn:sequenceFlow id="MainFlow_TopUp_4_yes" sourceRef="Gateway_TopUpOk" targetRef="UserTask_TopUpResult">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${topupOk == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_TopUp_4_no" sourceRef="Gateway_TopUpOk" targetRef="UserTask_TopUpScreen">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${topupOk == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_TopUp_5" sourceRef="UserTask_TopUpResult" targetRef="Gateway_ActionMenu" />
+
+      <bpmn:sequenceFlow id="MainFlow_Withdraw_1" sourceRef="ServiceTask_LoadWithdrawData" targetRef="UserTask_WithdrawScreen" />
+      <bpmn:sequenceFlow id="MainFlow_Withdraw_2" sourceRef="UserTask_WithdrawScreen" targetRef="ServiceTask_CreateWithdraw" />
+      <bpmn:sequenceFlow id="MainFlow_Withdraw_3" sourceRef="ServiceTask_CreateWithdraw" targetRef="Gateway_WithdrawOk" />
+      <bpmn:sequenceFlow id="MainFlow_Withdraw_4_yes" sourceRef="Gateway_WithdrawOk" targetRef="UserTask_WithdrawResult">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${withdrawOk == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Withdraw_4_no" sourceRef="Gateway_WithdrawOk" targetRef="UserTask_WithdrawScreen">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${withdrawOk == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_Withdraw_5" sourceRef="UserTask_WithdrawResult" targetRef="Gateway_ActionMenu" />
+
+      <bpmn:sequenceFlow id="MainFlow_P2P_1" sourceRef="ServiceTask_LoadP2PData" targetRef="UserTask_P2PScreen" />
+      <bpmn:sequenceFlow id="MainFlow_P2P_2" sourceRef="UserTask_P2PScreen" targetRef="ServiceTask_CreateP2P" />
+      <bpmn:sequenceFlow id="MainFlow_P2P_3" sourceRef="ServiceTask_CreateP2P" targetRef="Gateway_P2POk" />
+      <bpmn:sequenceFlow id="MainFlow_P2P_4_yes" sourceRef="Gateway_P2POk" targetRef="UserTask_P2PResult">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${p2pOk == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_P2P_4_no" sourceRef="Gateway_P2POk" targetRef="UserTask_P2PScreen">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${p2pOk == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="MainFlow_P2P_5" sourceRef="UserTask_P2PResult" targetRef="Gateway_ActionMenu" />
+
+      <bpmn:sequenceFlow id="MainFlow_SignOut_1" sourceRef="ServiceTask_SignOut" targetRef="EndEvent_MainSignedOut" />
+    </bpmn:subProcess>
+
+    <bpmn:exclusiveGateway id="Gateway_SignedOut" name="Çıkış yapıldı mı?">
+      <bpmn:incoming>Flow_Main_to_SignedOut</bpmn:incoming>
+      <bpmn:outgoing>Flow_SignedOutYes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SignedOutNo</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_AppExit" name="Uygulama kapatılır">
+      <bpmn:incoming>Flow_SignedOutNo</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_AppOpen_Splash" sourceRef="StartEvent_AppOpen" targetRef="UserTask_SplashScreen" />
+    <bpmn:sequenceFlow id="Flow_Splash_Check" sourceRef="UserTask_SplashScreen" targetRef="ServiceTask_SplashCheck" />
+    <bpmn:sequenceFlow id="Flow_Splash_Token" sourceRef="ServiceTask_SplashCheck" targetRef="Gateway_TokenExists" />
+    <bpmn:sequenceFlow id="Flow_TokenYes" sourceRef="Gateway_TokenExists" targetRef="SubProcess_Main">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${tokenExists == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_TokenNo" sourceRef="Gateway_TokenExists" targetRef="SubProcess_Auth">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${tokenExists == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Auth_to_Main" sourceRef="SubProcess_Auth" targetRef="SubProcess_Main" />
+    <bpmn:sequenceFlow id="Flow_Main_to_SignedOut" sourceRef="SubProcess_Main" targetRef="Gateway_SignedOut" />
+    <bpmn:sequenceFlow id="Flow_SignedOutYes" sourceRef="Gateway_SignedOut" targetRef="SubProcess_Auth">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${signedOut == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_SignedOutNo" sourceRef="Gateway_SignedOut" targetRef="EndEvent_AppExit">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${signedOut == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="Diagram_NovaWalletApp">
+    <bpmndi:BPMNPlane id="Plane_NovaWalletApp" bpmnElement="NovaWalletAppFlow">
+      <bpmndi:BPMNShape id="StartEvent_AppOpen_di" bpmnElement="StartEvent_AppOpen">
+        <dc:Bounds x="100" y="180" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_SplashScreen_di" bpmnElement="UserTask_SplashScreen">
+        <dc:Bounds x="180" y="160" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_SplashCheck_di" bpmnElement="ServiceTask_SplashCheck">
+        <dc:Bounds x="350" y="160" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_TokenExists_di" bpmnElement="Gateway_TokenExists" isMarkerVisible="true">
+        <dc:Bounds x="530" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_Auth_di" bpmnElement="SubProcess_Auth" isExpanded="false">
+        <dc:Bounds x="630" y="80" width="260" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_Main_di" bpmnElement="SubProcess_Main" isExpanded="false">
+        <dc:Bounds x="630" y="240" width="260" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_SignedOut_di" bpmnElement="Gateway_SignedOut" isMarkerVisible="true">
+        <dc:Bounds x="930" y="255" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AppExit_di" bpmnElement="EndEvent_AppExit">
+        <dc:Bounds x="1050" y="255" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Flow_AppOpen_Splash_di" bpmnElement="Flow_AppOpen_Splash">
+        <di:waypoint x="136" y="198" />
+        <di:waypoint x="180" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Splash_Check_di" bpmnElement="Flow_Splash_Check">
+        <di:waypoint x="320" y="200" />
+        <di:waypoint x="350" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Splash_Token_di" bpmnElement="Flow_Splash_Token">
+        <di:waypoint x="500" y="200" />
+        <di:waypoint x="530" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TokenYes_di" bpmnElement="Flow_TokenYes">
+        <di:waypoint x="580" y="200" />
+        <di:waypoint x="630" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TokenNo_di" bpmnElement="Flow_TokenNo">
+        <di:waypoint x="580" y="200" />
+        <di:waypoint x="630" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Auth_to_Main_di" bpmnElement="Flow_Auth_to_Main">
+        <di:waypoint x="890" y="150" />
+        <di:waypoint x="890" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Main_to_SignedOut_di" bpmnElement="Flow_Main_to_SignedOut">
+        <di:waypoint x="890" y="310" />
+        <di:waypoint x="930" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SignedOutYes_di" bpmnElement="Flow_SignedOutYes">
+        <di:waypoint x="955" y="255" />
+        <di:waypoint x="760" y="220" />
+        <di:waypoint x="760" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SignedOutNo_di" bpmnElement="Flow_SignedOutNo">
+        <di:waypoint x="980" y="280" />
+        <di:waypoint x="1050" y="273" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+  <bpmndi:BPMNDiagram id="Diagram_AuthFlow">
+    <bpmndi:BPMNPlane id="Plane_AuthFlow" bpmnElement="SubProcess_Auth">
+      <bpmndi:BPMNShape id="StartEvent_AuthStart_di" bpmnElement="StartEvent_AuthStart">
+        <dc:Bounds x="100" y="180" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_LoginScreen_di" bpmnElement="UserTask_LoginScreen">
+        <dc:Bounds x="180" y="160" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_LoginAction_di" bpmnElement="Gateway_LoginAction" isMarkerVisible="true">
+        <dc:Bounds x="380" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Login_di" bpmnElement="ServiceTask_Login">
+        <dc:Bounds x="480" y="160" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_LoginResult_di" bpmnElement="Gateway_LoginResult" isMarkerVisible="true">
+        <dc:Bounds x="660" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AuthSuccess_di" bpmnElement="EndEvent_AuthSuccess">
+        <dc:Bounds x="840" y="180" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="UserTask_RegisterStart_di" bpmnElement="UserTask_RegisterStart">
+        <dc:Bounds x="480" y="40" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_SendOtp_di" bpmnElement="ServiceTask_SendOtp">
+        <dc:Bounds x="720" y="40" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_EnterOtp_di" bpmnElement="UserTask_EnterOtp">
+        <dc:Bounds x="920" y="40" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_VerifyOtp_di" bpmnElement="ServiceTask_VerifyOtp">
+        <dc:Bounds x="1080" y="40" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_OtpVerifyOk_di" bpmnElement="Gateway_OtpVerifyOk" isMarkerVisible="true">
+        <dc:Bounds x="1280" y="55" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_CompleteProfile_di" bpmnElement="UserTask_CompleteProfile">
+        <dc:Bounds x="1360" y="20" width="220" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_SaveProfile_di" bpmnElement="ServiceTask_SaveProfile">
+        <dc:Bounds x="1620" y="40" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ProfileCompleted_di" bpmnElement="Gateway_ProfileCompleted" isMarkerVisible="true">
+        <dc:Bounds x="1820" y="55" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="AuthFlow_1_di" bpmnElement="AuthFlow_1">
+        <di:waypoint x="136" y="198" />
+        <di:waypoint x="180" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_2_di" bpmnElement="AuthFlow_2">
+        <di:waypoint x="360" y="200" />
+        <di:waypoint x="380" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_3_login_di" bpmnElement="AuthFlow_3_login">
+        <di:waypoint x="430" y="200" />
+        <di:waypoint x="480" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_3_register_di" bpmnElement="AuthFlow_3_register">
+        <di:waypoint x="405" y="175" />
+        <di:waypoint x="580" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_4_di" bpmnElement="AuthFlow_4">
+        <di:waypoint x="640" y="200" />
+        <di:waypoint x="660" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_5_success_di" bpmnElement="AuthFlow_5_success">
+        <di:waypoint x="710" y="200" />
+        <di:waypoint x="840" y="198" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_5_requiresProfile_di" bpmnElement="AuthFlow_5_requiresProfile">
+        <di:waypoint x="685" y="175" />
+        <di:waypoint x="800" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_5_fail_di" bpmnElement="AuthFlow_5_fail">
+        <di:waypoint x="660" y="225" />
+        <di:waypoint x="270" y="240" />
+        <di:waypoint x="270" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_6_di" bpmnElement="AuthFlow_6">
+        <di:waypoint x="680" y="80" />
+        <di:waypoint x="720" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_7_di" bpmnElement="AuthFlow_7">
+        <di:waypoint x="880" y="80" />
+        <di:waypoint x="920" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_8_di" bpmnElement="AuthFlow_8">
+        <di:waypoint x="1060" y="80" />
+        <di:waypoint x="1080" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_9_di" bpmnElement="AuthFlow_9">
+        <di:waypoint x="1240" y="80" />
+        <di:waypoint x="1280" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_10_yes_di" bpmnElement="AuthFlow_10_yes">
+        <di:waypoint x="1330" y="80" />
+        <di:waypoint x="1360" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_10_no_di" bpmnElement="AuthFlow_10_no">
+        <di:waypoint x="1280" y="105" />
+        <di:waypoint x="990" y="120" />
+        <di:waypoint x="990" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_11_di" bpmnElement="AuthFlow_11">
+        <di:waypoint x="1580" y="70" />
+        <di:waypoint x="1620" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_12_di" bpmnElement="AuthFlow_12">
+        <di:waypoint x="1780" y="80" />
+        <di:waypoint x="1820" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_13_yes_di" bpmnElement="AuthFlow_13_yes">
+        <di:waypoint x="1845" y="55" />
+        <di:waypoint x="270" y="40" />
+        <di:waypoint x="270" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AuthFlow_13_no_di" bpmnElement="AuthFlow_13_no">
+        <di:waypoint x="1820" y="105" />
+        <di:waypoint x="1470" y="120" />
+        <di:waypoint x="1470" y="70" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+  <bpmndi:BPMNDiagram id="Diagram_MainFlow">
+    <bpmndi:BPMNPlane id="Plane_MainFlow" bpmnElement="SubProcess_Main">
+      <bpmndi:BPMNShape id="StartEvent_MainStart_di" bpmnElement="StartEvent_MainStart">
+        <dc:Bounds x="100" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_WalletsScreen_di" bpmnElement="UserTask_WalletsScreen">
+        <dc:Bounds x="180" y="180" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_GetWallets_di" bpmnElement="ServiceTask_GetWallets">
+        <dc:Bounds x="420" y="180" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_WalletExists_di" bpmnElement="Gateway_WalletExists" isMarkerVisible="true">
+        <dc:Bounds x="620" y="195" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_NoWalletEmptyState_di" bpmnElement="UserTask_NoWalletEmptyState">
+        <dc:Bounds x="620" y="60" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ActionMenu_di" bpmnElement="Gateway_ActionMenu" isMarkerVisible="true">
+        <dc:Bounds x="740" y="190" width="60" height="60" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ServiceTask_GetWalletDetail_di" bpmnElement="ServiceTask_GetWalletDetail">
+        <dc:Bounds x="840" y="20" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_WalletDetailScreen_di" bpmnElement="UserTask_WalletDetailScreen">
+        <dc:Bounds x="1040" y="20" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_WalletDetailAction_di" bpmnElement="Gateway_WalletDetailAction" isMarkerVisible="true">
+        <dc:Bounds x="1280" y="35" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="SubProcess_TransactionsFlow_di" bpmnElement="SubProcess_TransactionsFlow" isExpanded="false">
+        <dc:Bounds x="840" y="120" width="220" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ServiceTask_LoadTopUpData_di" bpmnElement="ServiceTask_LoadTopUpData">
+        <dc:Bounds x="840" y="220" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_TopUpScreen_di" bpmnElement="UserTask_TopUpScreen">
+        <dc:Bounds x="1060" y="220" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CreateTopUp_di" bpmnElement="ServiceTask_CreateTopUp">
+        <dc:Bounds x="1280" y="220" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_TopUpOk_di" bpmnElement="Gateway_TopUpOk" isMarkerVisible="true">
+        <dc:Bounds x="1460" y="235" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_TopUpResult_di" bpmnElement="UserTask_TopUpResult">
+        <dc:Bounds x="1540" y="220" width="220" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ServiceTask_LoadWithdrawData_di" bpmnElement="ServiceTask_LoadWithdrawData">
+        <dc:Bounds x="840" y="320" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_WithdrawScreen_di" bpmnElement="UserTask_WithdrawScreen">
+        <dc:Bounds x="1060" y="320" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CreateWithdraw_di" bpmnElement="ServiceTask_CreateWithdraw">
+        <dc:Bounds x="1280" y="320" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_WithdrawOk_di" bpmnElement="Gateway_WithdrawOk" isMarkerVisible="true">
+        <dc:Bounds x="1460" y="335" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_WithdrawResult_di" bpmnElement="UserTask_WithdrawResult">
+        <dc:Bounds x="1540" y="320" width="220" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ServiceTask_LoadP2PData_di" bpmnElement="ServiceTask_LoadP2PData">
+        <dc:Bounds x="840" y="420" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_P2PScreen_di" bpmnElement="UserTask_P2PScreen">
+        <dc:Bounds x="1060" y="420" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_CreateP2P_di" bpmnElement="ServiceTask_CreateP2P">
+        <dc:Bounds x="1280" y="420" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_P2POk_di" bpmnElement="Gateway_P2POk" isMarkerVisible="true">
+        <dc:Bounds x="1460" y="435" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_P2PResult_di" bpmnElement="UserTask_P2PResult">
+        <dc:Bounds x="1540" y="420" width="220" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="SubProcess_CardsFlow_di" bpmnElement="SubProcess_CardsFlow" isExpanded="false">
+        <dc:Bounds x="840" y="520" width="220" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="SubProcess_BankAccountsFlow_di" bpmnElement="SubProcess_BankAccountsFlow" isExpanded="false">
+        <dc:Bounds x="840" y="620" width="240" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ServiceTask_SignOut_di" bpmnElement="ServiceTask_SignOut">
+        <dc:Bounds x="840" y="720" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_MainSignedOut_di" bpmnElement="EndEvent_MainSignedOut">
+        <dc:Bounds x="1040" y="742" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_MainExit_di" bpmnElement="EndEvent_MainExit">
+        <dc:Bounds x="840" y="800" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="MainFlow_1_di" bpmnElement="MainFlow_1">
+        <di:waypoint x="136" y="218" />
+        <di:waypoint x="180" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_2_di" bpmnElement="MainFlow_2">
+        <di:waypoint x="380" y="220" />
+        <di:waypoint x="420" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_3_di" bpmnElement="MainFlow_3">
+        <di:waypoint x="580" y="220" />
+        <di:waypoint x="620" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_4_yes_di" bpmnElement="MainFlow_4_yes">
+        <di:waypoint x="670" y="220" />
+        <di:waypoint x="740" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_4_no_di" bpmnElement="MainFlow_4_no">
+        <di:waypoint x="645" y="195" />
+        <di:waypoint x="730" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_5_di" bpmnElement="MainFlow_5">
+        <di:waypoint x="730" y="100" />
+        <di:waypoint x="770" y="190" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_Action_WalletDetail_di" bpmnElement="MainFlow_Action_WalletDetail">
+        <di:waypoint x="800" y="210" />
+        <di:waypoint x="840" y="60" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_Transactions_di" bpmnElement="MainFlow_Action_Transactions">
+        <di:waypoint x="800" y="220" />
+        <di:waypoint x="840" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_TopUp_di" bpmnElement="MainFlow_Action_TopUp">
+        <di:waypoint x="800" y="220" />
+        <di:waypoint x="840" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_Withdraw_di" bpmnElement="MainFlow_Action_Withdraw">
+        <di:waypoint x="800" y="230" />
+        <di:waypoint x="840" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_P2P_di" bpmnElement="MainFlow_Action_P2P">
+        <di:waypoint x="800" y="240" />
+        <di:waypoint x="840" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_Cards_di" bpmnElement="MainFlow_Action_Cards">
+        <di:waypoint x="800" y="250" />
+        <di:waypoint x="840" y="560" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_Bank_di" bpmnElement="MainFlow_Action_Bank">
+        <di:waypoint x="800" y="260" />
+        <di:waypoint x="840" y="660" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_Refresh_di" bpmnElement="MainFlow_Action_Refresh">
+        <di:waypoint x="770" y="190" />
+        <di:waypoint x="500" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_SignOut_di" bpmnElement="MainFlow_Action_SignOut">
+        <di:waypoint x="800" y="270" />
+        <di:waypoint x="840" y="760" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Action_Exit_di" bpmnElement="MainFlow_Action_Exit">
+        <di:waypoint x="770" y="250" />
+        <di:waypoint x="840" y="818" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_1_di" bpmnElement="MainFlow_WalletDetail_1">
+        <di:waypoint x="1000" y="60" />
+        <di:waypoint x="1040" y="60" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_2_di" bpmnElement="MainFlow_WalletDetail_2">
+        <di:waypoint x="1260" y="60" />
+        <di:waypoint x="1280" y="60" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_Back_di" bpmnElement="MainFlow_WalletDetail_Back">
+        <di:waypoint x="1305" y="35" />
+        <di:waypoint x="770" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_TopUp_di" bpmnElement="MainFlow_WalletDetail_TopUp">
+        <di:waypoint x="1305" y="60" />
+        <di:waypoint x="840" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_Withdraw_di" bpmnElement="MainFlow_WalletDetail_Withdraw">
+        <di:waypoint x="1305" y="70" />
+        <di:waypoint x="840" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_P2P_di" bpmnElement="MainFlow_WalletDetail_P2P">
+        <di:waypoint x="1305" y="80" />
+        <di:waypoint x="840" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_WalletDetail_Transactions_di" bpmnElement="MainFlow_WalletDetail_Transactions">
+        <di:waypoint x="1305" y="55" />
+        <di:waypoint x="840" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_Transactions_Return_di" bpmnElement="MainFlow_Transactions_Return">
+        <di:waypoint x="1060" y="160" />
+        <di:waypoint x="770" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Cards_Return_di" bpmnElement="MainFlow_Cards_Return">
+        <di:waypoint x="1060" y="560" />
+        <di:waypoint x="770" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Bank_Return_di" bpmnElement="MainFlow_Bank_Return">
+        <di:waypoint x="1080" y="660" />
+        <di:waypoint x="770" y="250" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_TopUp_1_di" bpmnElement="MainFlow_TopUp_1">
+        <di:waypoint x="1040" y="260" />
+        <di:waypoint x="1060" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_TopUp_2_di" bpmnElement="MainFlow_TopUp_2">
+        <di:waypoint x="1260" y="260" />
+        <di:waypoint x="1280" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_TopUp_3_di" bpmnElement="MainFlow_TopUp_3">
+        <di:waypoint x="1440" y="260" />
+        <di:waypoint x="1460" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_TopUp_4_yes_di" bpmnElement="MainFlow_TopUp_4_yes">
+        <di:waypoint x="1510" y="260" />
+        <di:waypoint x="1540" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_TopUp_4_no_di" bpmnElement="MainFlow_TopUp_4_no">
+        <di:waypoint x="1460" y="285" />
+        <di:waypoint x="1160" y="300" />
+        <di:waypoint x="1160" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_TopUp_5_di" bpmnElement="MainFlow_TopUp_5">
+        <di:waypoint x="1760" y="260" />
+        <di:waypoint x="770" y="210" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_Withdraw_1_di" bpmnElement="MainFlow_Withdraw_1">
+        <di:waypoint x="1040" y="360" />
+        <di:waypoint x="1060" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Withdraw_2_di" bpmnElement="MainFlow_Withdraw_2">
+        <di:waypoint x="1260" y="360" />
+        <di:waypoint x="1280" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Withdraw_3_di" bpmnElement="MainFlow_Withdraw_3">
+        <di:waypoint x="1440" y="360" />
+        <di:waypoint x="1460" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Withdraw_4_yes_di" bpmnElement="MainFlow_Withdraw_4_yes">
+        <di:waypoint x="1510" y="360" />
+        <di:waypoint x="1540" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Withdraw_4_no_di" bpmnElement="MainFlow_Withdraw_4_no">
+        <di:waypoint x="1460" y="385" />
+        <di:waypoint x="1160" y="400" />
+        <di:waypoint x="1160" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_Withdraw_5_di" bpmnElement="MainFlow_Withdraw_5">
+        <di:waypoint x="1760" y="360" />
+        <di:waypoint x="770" y="220" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_P2P_1_di" bpmnElement="MainFlow_P2P_1">
+        <di:waypoint x="1040" y="460" />
+        <di:waypoint x="1060" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_P2P_2_di" bpmnElement="MainFlow_P2P_2">
+        <di:waypoint x="1260" y="460" />
+        <di:waypoint x="1280" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_P2P_3_di" bpmnElement="MainFlow_P2P_3">
+        <di:waypoint x="1440" y="460" />
+        <di:waypoint x="1460" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_P2P_4_yes_di" bpmnElement="MainFlow_P2P_4_yes">
+        <di:waypoint x="1510" y="460" />
+        <di:waypoint x="1540" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_P2P_4_no_di" bpmnElement="MainFlow_P2P_4_no">
+        <di:waypoint x="1460" y="485" />
+        <di:waypoint x="1160" y="500" />
+        <di:waypoint x="1160" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MainFlow_P2P_5_di" bpmnElement="MainFlow_P2P_5">
+        <di:waypoint x="1760" y="460" />
+        <di:waypoint x="770" y="230" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="MainFlow_SignOut_1_di" bpmnElement="MainFlow_SignOut_1">
+        <di:waypoint x="1000" y="760" />
+        <di:waypoint x="1040" y="760" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+  <bpmndi:BPMNDiagram id="Diagram_TransactionsFlow">
+    <bpmndi:BPMNPlane id="Plane_TransactionsFlow" bpmnElement="SubProcess_TransactionsFlow">
+      <bpmndi:BPMNShape id="StartEvent_TransactionsStart_di" bpmnElement="StartEvent_TransactionsStart">
+        <dc:Bounds x="120" y="180" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Tx_GetTransactions_di" bpmnElement="ServiceTask_Tx_GetTransactions">
+        <dc:Bounds x="200" y="160" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Tx_TransactionsScreen_di" bpmnElement="UserTask_Tx_TransactionsScreen">
+        <dc:Bounds x="380" y="160" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Tx_Action_di" bpmnElement="Gateway_Tx_Action" isMarkerVisible="true">
+        <dc:Bounds x="600" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Tx_GetDetail_di" bpmnElement="ServiceTask_Tx_GetDetail">
+        <dc:Bounds x="700" y="60" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Tx_DetailScreen_di" bpmnElement="UserTask_Tx_DetailScreen">
+        <dc:Bounds x="920" y="60" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Tx_Done_di" bpmnElement="EndEvent_Tx_Done">
+        <dc:Bounds x="740" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="TxFlow_1_di" bpmnElement="TxFlow_1">
+        <di:waypoint x="156" y="198" />
+        <di:waypoint x="200" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="TxFlow_2_di" bpmnElement="TxFlow_2">
+        <di:waypoint x="360" y="200" />
+        <di:waypoint x="380" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="TxFlow_3_di" bpmnElement="TxFlow_3">
+        <di:waypoint x="580" y="200" />
+        <di:waypoint x="600" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="TxFlow_4_detail_di" bpmnElement="TxFlow_4_detail">
+        <di:waypoint x="625" y="175" />
+        <di:waypoint x="700" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="TxFlow_4_back_di" bpmnElement="TxFlow_4_back">
+        <di:waypoint x="650" y="200" />
+        <di:waypoint x="740" y="208" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="TxFlow_5_di" bpmnElement="TxFlow_5">
+        <di:waypoint x="880" y="100" />
+        <di:waypoint x="920" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="TxFlow_6_di" bpmnElement="TxFlow_6">
+        <di:waypoint x="1100" y="100" />
+        <di:waypoint x="480" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+  <bpmndi:BPMNDiagram id="Diagram_CardsFlow">
+    <bpmndi:BPMNPlane id="Plane_CardsFlow" bpmnElement="SubProcess_CardsFlow">
+      <bpmndi:BPMNShape id="StartEvent_CardsStart_di" bpmnElement="StartEvent_CardsStart">
+        <dc:Bounds x="120" y="180" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Cards_GetCards_di" bpmnElement="ServiceTask_Cards_GetCards">
+        <dc:Bounds x="200" y="160" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Cards_List_di" bpmnElement="UserTask_Cards_List">
+        <dc:Bounds x="380" y="160" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Cards_Action_di" bpmnElement="Gateway_Cards_Action" isMarkerVisible="true">
+        <dc:Bounds x="600" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Cards_Create_di" bpmnElement="UserTask_Cards_Create">
+        <dc:Bounds x="700" y="40" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Cards_Add_di" bpmnElement="ServiceTask_Cards_Add">
+        <dc:Bounds x="920" y="40" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Cards_GetDetail_di" bpmnElement="ServiceTask_Cards_GetDetail">
+        <dc:Bounds x="700" y="280" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Cards_Detail_di" bpmnElement="UserTask_Cards_Detail">
+        <dc:Bounds x="1100" y="140" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Cards_DetailAction_di" bpmnElement="Gateway_Cards_DetailAction" isMarkerVisible="true">
+        <dc:Bounds x="1340" y="155" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Cards_Deactivate_di" bpmnElement="ServiceTask_Cards_Deactivate">
+        <dc:Bounds x="1460" y="40" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Cards_Done_di" bpmnElement="EndEvent_Cards_Done">
+        <dc:Bounds x="700" y="195" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="CardFlow_1_di" bpmnElement="CardFlow_1">
+        <di:waypoint x="156" y="198" />
+        <di:waypoint x="200" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_2_di" bpmnElement="CardFlow_2">
+        <di:waypoint x="360" y="200" />
+        <di:waypoint x="380" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_3_di" bpmnElement="CardFlow_3">
+        <di:waypoint x="580" y="200" />
+        <di:waypoint x="600" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_4_add_di" bpmnElement="CardFlow_4_add">
+        <di:waypoint x="625" y="175" />
+        <di:waypoint x="700" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_4_detail_di" bpmnElement="CardFlow_4_detail">
+        <di:waypoint x="625" y="225" />
+        <di:waypoint x="700" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_4_back_di" bpmnElement="CardFlow_4_back">
+        <di:waypoint x="650" y="200" />
+        <di:waypoint x="700" y="213" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_5_di" bpmnElement="CardFlow_5">
+        <di:waypoint x="880" y="80" />
+        <di:waypoint x="920" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_6_di" bpmnElement="CardFlow_6">
+        <di:waypoint x="1080" y="80" />
+        <di:waypoint x="1180" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_7_di" bpmnElement="CardFlow_7">
+        <di:waypoint x="880" y="320" />
+        <di:waypoint x="1180" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_8_di" bpmnElement="CardFlow_8">
+        <di:waypoint x="1300" y="180" />
+        <di:waypoint x="1340" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_9_back_di" bpmnElement="CardFlow_9_back">
+        <di:waypoint x="1365" y="155" />
+        <di:waypoint x="480" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_9_deactivate_di" bpmnElement="CardFlow_9_deactivate">
+        <di:waypoint x="1365" y="205" />
+        <di:waypoint x="1460" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="CardFlow_10_di" bpmnElement="CardFlow_10">
+        <di:waypoint x="1640" y="80" />
+        <di:waypoint x="480" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+  <bpmndi:BPMNDiagram id="Diagram_BankAccountsFlow">
+    <bpmndi:BPMNPlane id="Plane_BankAccountsFlow" bpmnElement="SubProcess_BankAccountsFlow">
+      <bpmndi:BPMNShape id="StartEvent_BankStart_di" bpmnElement="StartEvent_BankStart">
+        <dc:Bounds x="120" y="180" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Bank_GetAccounts_di" bpmnElement="ServiceTask_Bank_GetAccounts">
+        <dc:Bounds x="200" y="160" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Bank_List_di" bpmnElement="UserTask_Bank_List">
+        <dc:Bounds x="400" y="160" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Bank_Action_di" bpmnElement="Gateway_Bank_Action" isMarkerVisible="true">
+        <dc:Bounds x="640" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Bank_Create_di" bpmnElement="UserTask_Bank_Create">
+        <dc:Bounds x="740" y="40" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Bank_Add_di" bpmnElement="ServiceTask_Bank_Add">
+        <dc:Bounds x="980" y="40" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Bank_GetDetail_di" bpmnElement="ServiceTask_Bank_GetDetail">
+        <dc:Bounds x="740" y="280" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Bank_Detail_di" bpmnElement="UserTask_Bank_Detail">
+        <dc:Bounds x="1180" y="140" width="220" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Bank_DetailAction_di" bpmnElement="Gateway_Bank_DetailAction" isMarkerVisible="true">
+        <dc:Bounds x="1440" y="155" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Bank_Deactivate_di" bpmnElement="ServiceTask_Bank_Deactivate">
+        <dc:Bounds x="1560" y="40" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Bank_Done_di" bpmnElement="EndEvent_Bank_Done">
+        <dc:Bounds x="740" y="195" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="BankFlow_1_di" bpmnElement="BankFlow_1">
+        <di:waypoint x="156" y="198" />
+        <di:waypoint x="200" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_2_di" bpmnElement="BankFlow_2">
+        <di:waypoint x="380" y="200" />
+        <di:waypoint x="400" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_3_di" bpmnElement="BankFlow_3">
+        <di:waypoint x="620" y="200" />
+        <di:waypoint x="640" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_4_add_di" bpmnElement="BankFlow_4_add">
+        <di:waypoint x="665" y="175" />
+        <di:waypoint x="740" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_4_detail_di" bpmnElement="BankFlow_4_detail">
+        <di:waypoint x="665" y="225" />
+        <di:waypoint x="740" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_4_back_di" bpmnElement="BankFlow_4_back">
+        <di:waypoint x="690" y="200" />
+        <di:waypoint x="740" y="213" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_5_di" bpmnElement="BankFlow_5">
+        <di:waypoint x="940" y="80" />
+        <di:waypoint x="980" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_6_di" bpmnElement="BankFlow_6">
+        <di:waypoint x="1160" y="80" />
+        <di:waypoint x="1240" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_7_di" bpmnElement="BankFlow_7">
+        <di:waypoint x="940" y="320" />
+        <di:waypoint x="1240" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_8_di" bpmnElement="BankFlow_8">
+        <di:waypoint x="1400" y="180" />
+        <di:waypoint x="1440" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_9_back_di" bpmnElement="BankFlow_9_back">
+        <di:waypoint x="1465" y="155" />
+        <di:waypoint x="520" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_9_deactivate_di" bpmnElement="BankFlow_9_deactivate">
+        <di:waypoint x="1465" y="205" />
+        <di:waypoint x="1560" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BankFlow_10_di" bpmnElement="BankFlow_10">
+        <di:waypoint x="1760" y="80" />
+        <di:waypoint x="520" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
