@@ -42,7 +42,13 @@ export function RegisterStartScreen({ navigation, route }: Props) {
 
   const maxLocalLength = getMaxLocalLength(country);
   const fullPhone = buildPhoneNumber(country, localNumber);
-  const canContinue = useMemo(() => isValidPhone(fullPhone) && isValidTckn(tckn), [fullPhone, tckn]);
+  const trimmedTckn = tckn.trim();
+  const canContinue = useMemo(() => {
+    if (!isValidPhone(fullPhone)) {
+      return false;
+    }
+    return trimmedTckn.length === 0 || isValidTckn(trimmedTckn);
+  }, [fullPhone, trimmedTckn]);
 
   const handleContinue = async () => {
     setLoading(true);
@@ -51,7 +57,10 @@ export function RegisterStartScreen({ navigation, route }: Props) {
     try {
       await registerStart(fullPhone.trim());
       setInfo(t("auth.register_start_success"));
-      navigation.navigate("OtpVerify", { phone: fullPhone.trim(), tckn: tckn.trim() });
+      navigation.navigate(
+        "OtpVerify",
+        trimmedTckn ? { phone: fullPhone.trim(), tckn: trimmedTckn } : { phone: fullPhone.trim() }
+      );
     } catch (err) {
       setError(formatApiError(err, t("auth.register_start_failed")));
     } finally {

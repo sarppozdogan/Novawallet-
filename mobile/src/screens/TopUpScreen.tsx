@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getBankAccounts, BankAccountSummary } from "../api/bankAccounts";
 import { getCards, CardSummary } from "../api/cards";
@@ -39,9 +40,8 @@ export function TopUpScreen({ navigation, route }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
-    const loadData = async () => {
+  const loadData = useCallback(
+    async (isActive: () => boolean) => {
       setLoading(true);
       setError(null);
       try {
@@ -50,31 +50,53 @@ export function TopUpScreen({ navigation, route }: Props) {
           getBankAccounts(false),
           getCards(false)
         ]);
-        if (!mounted) {
+        if (!isActive()) {
           return;
         }
+
+        const activeBankAccounts = bankData.filter((item) => item.isActive);
+        const activeCards = cardData.filter((item) => item.isActive);
+
         setWallets(walletData);
-        setBankAccounts(bankData.filter((item) => item.isActive));
-        setCards(cardData.filter((item) => item.isActive));
-        if (!selectedWalletId && walletData.length > 0) {
-          setSelectedWalletId(walletData[0].id);
-        }
+        setBankAccounts(activeBankAccounts);
+        setCards(activeCards);
+
+        setSelectedWalletId((current) => {
+          if (initialWalletId && walletData.some((wallet) => wallet.id === initialWalletId)) {
+            return initialWalletId;
+          }
+          if (current && walletData.some((wallet) => wallet.id === current)) {
+            return current;
+          }
+          return walletData.length > 0 ? walletData[0].id : null;
+        });
+        setSelectedBankAccountId((current) =>
+          current && activeBankAccounts.some((account) => account.id === current) ? current : null
+        );
+        setSelectedCardId((current) => (current && activeCards.some((card) => card.id === current) ? current : null));
       } catch (err) {
-        if (mounted) {
+        if (isActive()) {
           setError(formatApiError(err, t("topup.error_load")));
         }
       } finally {
-        if (mounted) {
+        if (isActive()) {
           setLoading(false);
         }
       }
-    };
+    },
+    [initialWalletId, t]
+  );
 
-    loadData();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const isActive = () => active;
+      void loadData(isActive);
+      return () => {
+        active = false;
+      };
+    }, [loadData])
+  );
 
   const selectedWallet = wallets.find((wallet) => wallet.id === selectedWalletId) || null;
   const amountValue = Number(amount);

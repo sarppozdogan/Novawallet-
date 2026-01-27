@@ -67,7 +67,7 @@ export function BankAccountCreateScreen({ navigation }: Props) {
                 onChangeText={(value) => setIban(sanitizeIbanInput(value))}
                 placeholder="TR00 0000 0000 0000 0000 0000 00"
                 autoCapitalize="characters"
-                maxLength={34}
+                maxLength={26}
               />
               <GlassInput
                 label={t("bank_accounts.bank_name_label")}

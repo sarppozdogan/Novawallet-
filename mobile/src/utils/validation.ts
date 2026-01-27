@@ -15,12 +15,12 @@ export function sanitizeAmountInput(value: string): string {
 }
 
 export function sanitizeIbanInput(value: string): string {
-  return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 34);
+  return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 26);
 }
 
 export function isValidIban(value: string): boolean {
   const cleaned = sanitizeIbanInput(value);
-  return cleaned.length >= 15 && cleaned.length <= 34;
+  return /^TR\d{24}$/.test(cleaned);
 }
 
 export function sanitizeWalletNumberInput(value: string): string {
